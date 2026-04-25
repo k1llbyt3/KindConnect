@@ -1,45 +1,61 @@
-const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`
-
-// ─── SHARED FETCH WRAPPER ───────────────────────────────────
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const callGemini = async (prompt) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 8000)
+  const models = [
+    'gemini-3-flash-preview',       // Primary (Verified Working)
+    'gemini-2.5-flash',             // High-RPM Fallback
+    'gemini-2.0-flash',             // High-RPM Fallback
+    'gemini-flash-latest',          // Stable General Fallback
+    'gemini-3.1-flash-lite-preview' // Ultra-lightweight Fallback
+  ]
 
-  try {
-    const res = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 300 },
-      }),
-    })
-    clearTimeout(timeout)
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000) 
 
-    if (!res.ok) {
-      const errBody = await res.text()
-      throw new Error(`Gemini HTTP ${res.status}: ${errBody}`)
+    try {
+      console.log(`🤖 Attempting Gemini with ${model} (Priority ${i + 1}/${models.length})...`)
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { 
+            temperature: 0.1, 
+            maxOutputTokens: 1000,
+            responseMimeType: "application/json"
+          },
+        }),
+      })
+      clearTimeout(timeout)
+
+      if (res.ok) {
+        const data = await res.json()
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
+        if (rawText) {
+          const clean = rawText.replace(/```json|```/gi, '').trim()
+          return JSON.parse(clean)
+        }
+      } else {
+        const errBody = await res.text()
+        console.warn(`⚠️ Gemini ${model} failed (HTTP ${res.status}): ${errBody.slice(0, 150)}...`)
+      }
+    } catch (err) {
+      clearTimeout(timeout)
+      console.warn(`⚠️ Gemini ${model} error:`, err.name === 'AbortError' ? 'Timeout' : err.message)
     }
 
-    const data = await res.json()
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!rawText) throw new Error('Gemini returned empty response')
-
-    const clean = rawText.replace(/```json|```/gi, '').trim()
-    return JSON.parse(clean)
-
-  } catch (err) {
-    clearTimeout(timeout)
-    if (err.name === 'AbortError') {
-      console.warn('Gemini timeout after 8s')
-    } else {
-      console.error('Gemini call failed:', err.message)
+    if (i < models.length - 1) {
+      console.log(`⏳ Model ${model} failed. Retrying with next priority model in 2s...`)
+      await sleep(2000) 
     }
-    return null
   }
+
+  console.error('❌ All Gemini models failed. Using local fallback.')
+  return null
 }
 
 // ─── URGENCY SCORING ────────────────────────────────────────
@@ -87,11 +103,11 @@ Scoring guide:
   }
 
   return {
-    urgencyScore:      Math.round(score),
-    urgencyLevel:      parsed.urgencyLevel,
-    aiSummary:         parsed.aiSummary,
-    aiActionCategory:  parsed.aiActionCategory || 'Community response needed',
-    aiReason:          parsed.aiReason || 'Score based on report details',
+    urgencyScore: Math.round(score),
+    urgencyLevel: parsed.urgencyLevel,
+    aiSummary: parsed.aiSummary,
+    aiActionCategory: parsed.aiActionCategory || 'Community response needed',
+    aiReason: parsed.aiReason || 'Score based on report details',
   }
 }
 
@@ -143,10 +159,10 @@ Consider: skill relevance to the issue type, location proximity, reliabilityScor
     .filter(m => m.volunteerId && m.volunteerName)
     .slice(0, 3)
     .map(m => ({
-      volunteerId:   String(m.volunteerId),
+      volunteerId: String(m.volunteerId),
       volunteerName: String(m.volunteerName),
-      matchScore:    Math.min(Math.max(Number(m.matchScore) || 50, 0), 100),
-      matchReason:   m.matchReason || 'Skill match',
+      matchScore: Math.min(Math.max(Number(m.matchScore) || 50, 0), 100),
+      matchReason: m.matchReason || 'Skill match',
     }))
 }
 
@@ -154,23 +170,23 @@ Consider: skill relevance to the issue type, location proximity, reliabilityScor
 
 export const simpleMatch = (report, volunteers) => {
   const SKILL_TO_ISSUE_MAP = {
-    water:          ['construction', 'tech', 'general'],
-    food:           ['logistics', 'general'],
-    medical:        ['medical', 'counseling'],
-    shelter:        ['construction', 'general'],
-    safety:         ['counseling', 'general'],
+    water: ['construction', 'tech', 'general'],
+    food: ['logistics', 'general'],
+    medical: ['medical', 'counseling'],
+    shelter: ['construction', 'general'],
+    safety: ['counseling', 'general'],
     infrastructure: ['construction', 'tech'],
-    other:          ['general'],
+    other: ['general'],
   }
   const relevantSkills = SKILL_TO_ISSUE_MAP[report.issueType] || ['general']
 
   return volunteers
     .filter(v => v.available)
     .map(v => ({
-      volunteerId:   v.id,
+      volunteerId: v.id,
       volunteerName: v.name,
-      matchScore:    v.skills?.some(s => relevantSkills.includes(s)) ? 70 : 40,
-      matchReason:   'Matched by skill category (AI unavailable)',
+      matchScore: v.skills?.some(s => relevantSkills.includes(s)) ? 70 : 40,
+      matchReason: 'Matched by skill category (AI unavailable)',
     }))
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 3)
