@@ -41,6 +41,7 @@ const TEST_REPORTS = [
 ]
 
 export const seedAll = async () => {
+  console.log('🌱 START SEEDING...');
   console.log('🌱 Seeding volunteers...')
   for (const v of TEST_VOLUNTEERS) {
     const id = await addVolunteer(v)
@@ -50,7 +51,7 @@ export const seedAll = async () => {
   console.log('🌱 Seeding reports + running AI scoring...')
   for (const r of TEST_REPORTS) {
     const reportId = await addReport(r)
-    console.log(`  ✓ Report created — id: ${reportId}, running AI...`)
+    console.log(`  ✓ Report created — id: ${reportId}, calling Gemini...`)
 
     let aiResult = await scoreUrgency(r)
 
@@ -65,10 +66,10 @@ export const seedAll = async () => {
         aiReason:         'Scored using fallback formula (AI unavailable)',
       }
     }
-
+    
+    console.log(`  ✓ Score obtained: ${aiResult.urgencyLevel}. Updating Firestore...`)
     await updateReport(reportId, { ...aiResult, aiStatus: 'done' })
-    console.log(`  ✓ Scored: ${aiResult.urgencyLevel} (${aiResult.urgencyScore}) — ${aiResult.aiSummary}`)
+    console.log(`  ✓ Report updated!`)
   }
-
-  console.log('✅ Seeding complete. Check Firebase Console.')
+  console.log('✅ ALL SEEDING COMPLETE');
 }

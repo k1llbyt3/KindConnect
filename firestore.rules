@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🚨 EMERGENCY REPORTS
+    match /reports/{reportId} {
+      allow read, create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['aiStatus', 'urgencyScore', 'urgencyLevel', 'aiSummary', 'aiActionCategory', 'aiReason', 'status', 'assignedTaskId']);
+    }
+
+    // 🤝 VOLUNTEERS
+    match /volunteers/{volunteerId} {
+      allow read: if true;
+      allow create: if request.resource.data.name is string 
+                    && request.resource.data.skills is list;
+      allow update: if true;
+    }
+
+    // 📋 TASKS
+    match /tasks/{taskId} {
+      allow read, create, update: if true;
+    }
+  }
+}

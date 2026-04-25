@@ -41,9 +41,17 @@ export const updateReport = async (id, fields) => {
 
 export const subscribeToReports = (callback) => {
   const q = query(collection(db, 'reports'), orderBy('urgencyScore', 'desc'))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+  return onSnapshot(q, 
+    (snap) => {
+      callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    },
+    (err) => {
+      console.error('Firestore Error:', err)
+      if (err.message.includes('index')) {
+        alert('⚠️ Firestore index required! Please click the link in your browser console to create it.')
+      }
+    }
+  )
 }
 
 export const getReports = async () => {

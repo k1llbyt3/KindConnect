@@ -1,0 +1,72 @@
+:root {
+  --bg-dark: #0a0a0c;
+  --card-bg: #141418;
+  --accent-primary: #6366f1;
+  --accent-secondary: #8b5cf6;
+  --text-main: #f1f1f3;
+  --text-dim: #94a3b8;
+  --border: rgba(255, 255, 255, 0.1);
+  --critical: #ef4444;
+  --high: #f59e0b;
+  --medium: #3b82f6;
+  --low: #10b981;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+}
+
+.report-card {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.volunteers-panel {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.btn-seed {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-seed:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
