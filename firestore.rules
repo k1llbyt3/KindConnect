@@ -4,9 +4,7 @@ service cloud.firestore {
     
     // 🚨 EMERGENCY REPORTS
     match /reports/{reportId} {
-      allow read, create: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys()
-        .hasAny(['aiStatus', 'urgencyScore', 'urgencyLevel', 'aiSummary', 'aiActionCategory', 'aiReason', 'status', 'assignedTaskId']);
+      allow read, write: if true; 
     }
 
     // 🤝 VOLUNTEERS
