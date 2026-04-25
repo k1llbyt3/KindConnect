@@ -22,12 +22,18 @@ function App() {
       await seedAll()
       alert('✅ Seeding complete! Check your console for details.')
     } catch (err) {
-      console.error('Seed Failed:', err)
-      alert(`❌ Seed Failed: ${err.message}\n\nCheck Firestore rules and console.`)
+      console.error("❌ Seed failed:", err);
+      if (err.message.includes("Database '(default)' not found")) {
+        alert("⚠️ FIRESTORE NOT INITIALIZED: Please go to Firebase Console and click 'Create Database' first.");
+      } else if (err.code === 'permission-denied') {
+        alert("⚠️ PERMISSION DENIED: Check your Firestore Rules. Make sure they allow writes.");
+      } else {
+        alert("❌ Error: " + err.message);
+      }
     } finally {
-      setIsSeeding(false)
+      setIsSeeding(false);
     }
-  }
+  };
 
   return (
     <div className="dashboard">
