@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { subscribeToReports } from '../../firebase'
+import { subscribeToReports } from '../firebase'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function AdminDashboard() {
   const [reports, setReports] = useState([])
@@ -9,11 +10,13 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('All')
 
   useEffect(() => {
-    const unsub = subscribeToReports(setReports)
+    const unsub = subscribeToReports(data => {
+      setReports(data || [])
+    })
     return () => unsub()
   }, [])
 
-  const filteredReports = reports.filter(r => {
+  const filteredReports = (reports || []).filter(r => {
     if (filterType !== 'All' && r.issueType !== filterType) return false
     if (filterUrgency !== 'All' && r.urgencyLevel !== filterUrgency) return false
     if (filterStatus !== 'All' && r.status !== filterStatus) return false
@@ -78,7 +81,7 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {sortedReports.map(r => (
+            {(sortedReports || []).map(r => (
               <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={tdStyle}>{r.urgencyScore ?? 'N/A'}</td>
                 <td style={{...tdStyle, color: `var(--${r.urgencyLevel?.toLowerCase() || 'text-main'})`}}>
@@ -93,7 +96,7 @@ export default function AdminDashboard() {
                   {r.assignedVolunteerName && <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{r.assignedVolunteerName}</div>}
                 </td>
                 <td style={tdStyle}>
-                  <Link to={`/admin/report/${r.id}`} className="btn-link" style={linkStyle}>
+                  <Link to={`/report/${r.id}`} className="btn-link" style={linkStyle}>
                     View
                   </Link>
                 </td>

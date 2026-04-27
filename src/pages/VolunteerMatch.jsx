@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { db, updateReport, getVolunteers, addTask } from '../../firebase'
+import { db, updateReport, getVolunteers, addTask } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { matchVolunteers, simpleMatch } from '../../gemini'
+import { matchVolunteers, simpleMatch } from '../gemini'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function VolunteerMatch() {
   const { id } = useParams()
@@ -12,6 +13,7 @@ export default function VolunteerMatch() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [assigningId, setAssigningId] = useState(null)
+  const [assignedTask, setAssignedTask] = useState(null) // { taskId, volunteerName }
 
   useEffect(() => {
     const fetchAndMatch = async () => {
@@ -61,12 +63,11 @@ export default function VolunteerMatch() {
       // 1. Create a task for the volunteer
       const taskId = await addTask({
         reportId: report.id,
-        volunteerId: match.volunteerId,
+        volunteerId: String(match.volunteerId),
         volunteerName: match.volunteerName,
-        issueType: report.issueType,
-        location: report.location,
-        description: report.description,
-        urgencyLevel: report.urgencyLevel,
+        reportSummary: report.aiSummary || report.description || 'Assigned task',
+        reportLocation: report.location,
+        urgencyLevel: report.urgencyLevel || 'Medium',
         status: 'assigned'
       })
 
@@ -78,8 +79,8 @@ export default function VolunteerMatch() {
         assignedVolunteerName: match.volunteerName
       })
 
-      alert(`✅ Task assigned to ${match.volunteerName}!`)
-      navigate('/admin')
+      // 3. Show Task ID on screen instead of navigating away
+      setAssignedTask({ taskId, volunteerName: match.volunteerName })
     } catch (err) {
       console.error("Assignment failed:", err)
       alert("Failed to assign volunteer. Check console.")
@@ -87,17 +88,68 @@ export default function VolunteerMatch() {
     }
   }
 
-  if (loading) return <div>AI is finding the best volunteers... ✨</div>
+  // ─── SUCCESS SCREEN ─────────────────────────────────────────
+  if (assignedTask) {
+    return (
+      <div className="page-container" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '3rem 1rem' }}>
+        <div className="card" style={{ padding: '2.5rem', borderRadius: '16px' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✅</div>
+          <h2 style={{ color: '#10b981', margin: '0 0 0.5rem 0', fontSize: '1.75rem' }}>Task Assigned!</h2>
+          <p style={{ color: 'var(--text-dim)', marginBottom: '2rem' }}>
+            Successfully assigned to <strong style={{ color: 'var(--text-main)' }}>{assignedTask.volunteerName}</strong>.
+          </p>
+
+          <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', margin: '0 0 0.75rem 0', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '600' }}>🔑 Task ID (Share with Volunteer)</p>
+            <p style={{
+              fontFamily: 'monospace',
+              fontSize: '1.1rem',
+              color: 'var(--accent-primary)',
+              wordBreak: 'break-all',
+              margin: 0,
+              userSelect: 'all',
+              background: 'rgba(129, 140, 248, 0.1)',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              cursor: 'text'
+            }}>
+              {assignedTask.taskId}
+            </p>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '0.75rem', marginBottom: 0 }}>
+              The volunteer uses this ID on the Verify Task page to submit proof of completion.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button
+              onClick={() => { navigator.clipboard.writeText(assignedTask.taskId); alert('Task ID copied!'); }}
+              style={{ background: 'var(--accent-gradient)', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Copy Task ID
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{ background: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) return <LoadingSpinner />
   if (error) return (
-    <div>
-      <p>{error}</p>
-      <Link to={`/admin/report/${id}`}>Back to Report</Link>
+    <div className="page-container" style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <p style={{ color: 'var(--critical)', fontSize: '1.2rem', marginBottom: '1.5rem' }}>{error}</p>
+      <Link to={`/report/${id}`} className="btn-link" style={btnStyle}>Back to Report</Link>
     </div>
   )
 
   return (
     <div className="volunteer-match page-container" style={{ maxWidth: '800px' }}>
-      <Link to={`/admin/report/${id}`} style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
+      <Link to={`/report/${id}`} style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
         <span>&larr;</span> Back to Report
       </Link>
 
@@ -114,7 +166,7 @@ export default function VolunteerMatch() {
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '1.5rem' }}>
-          {matches.map((m, index) => (
+          {(matches || []).map((m, index) => (
             <div key={m.volunteerId} className="card match-card" style={matchCardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>

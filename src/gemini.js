@@ -192,3 +192,52 @@ export const simpleMatch = (report, volunteers) => {
     .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, 3)
 }
+
+// ─── IMPACT PREDICTION ─────────────────────────────────────
+
+export async function predictImpact(report) {
+  const prompt = `Predict what will happen in 24-48 hours if no action is taken.
+Issue Type: ${report.issueType}
+Description: ${report.description}
+Location: ${report.location}
+Affected: ${report.affectedCount}
+Severity: ${report.severityRaw}/5
+
+Output JSON only:
+{
+  "predictedImpact": "<short description of impact>",
+  "riskLevel": "<Low|Medium|High|Severe>"
+}`;
+
+  try {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 200 },
+      }),
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        let clean = rawText.replace(/```json|```/gi, '').trim();
+        const jsonMatch = clean.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) clean = jsonMatch[0];
+        const parsed = JSON.parse(clean);
+        if (parsed.predictedImpact && parsed.riskLevel) {
+          return parsed;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Impact Prediction failed:", err);
+  }
+  return null;
+}

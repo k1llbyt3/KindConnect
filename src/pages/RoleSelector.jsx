@@ -72,7 +72,7 @@ export default function RoleSelector({ setRole }) {
   const navigate = useNavigate();
 
   const handleSelectRole = (role, path) => {
-    setRole(role);
+    if (setRole) setRole(role);
     navigate(path);
   };
 
@@ -120,7 +120,7 @@ export default function RoleSelector({ setRole }) {
 
         <div 
           style={cardStyle}
-          onClick={() => handleSelectRole('volunteer', '/tasks')}
+          onClick={() => handleSelectRole('volunteer', '/register')}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-4px)';
             e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
@@ -133,6 +133,23 @@ export default function RoleSelector({ setRole }) {
           <div style={iconStyle}>🙋</div>
           <h2 style={cardTitleStyle}>Volunteer</h2>
           <p style={cardDescStyle}>See your assigned tasks and update progress</p>
+        </div>
+
+        <div 
+          style={cardStyle}
+          onClick={() => handleSelectRole(null, '/verify-task')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
+          }}
+        >
+          <div style={iconStyle}>✅</div>
+          <h2 style={cardTitleStyle}>Verify Task</h2>
+          <p style={cardDescStyle}>Independently submit proof for a completed task</p>
         </div>
       </div>
     </div>

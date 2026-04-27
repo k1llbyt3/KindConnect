@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { db, updateReport } from '../../firebase'
+import { db, updateReport } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import { predictImpact } from '../gemini'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function ReportDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [impactPrediction, setImpactPrediction] = useState(null)
+  const [predicting, setPredicting] = useState(false)
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -23,12 +27,28 @@ export default function ReportDetail() {
     fetchReport()
   }, [id])
 
-  if (loading) return <div>Loading report...</div>
-  if (!report) return <div>Report not found.</div>
+  useEffect(() => {
+    if (report && !impactPrediction && !predicting) {
+      setPredicting(true)
+      predictImpact(report).then(res => {
+        setImpactPrediction(res || { error: true })
+        setPredicting(false)
+      })
+    }
+  }, [report, impactPrediction, predicting])
+
+  if (loading) return <LoadingSpinner />
+  if (!report) return (
+    <div className="page-container" style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <h2 style={{ color: 'var(--text-main)' }}>Report Not Found</h2>
+      <p style={{ color: 'var(--text-dim)', marginBottom: '2rem' }}>This report may have been deleted or does not exist.</p>
+      <Link to="/dashboard" style={btnStyle}>Back to Dashboard</Link>
+    </div>
+  )
 
   return (
     <div className="report-detail page-container" style={{ maxWidth: '800px' }}>
-      <Link to="/admin" style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
+      <Link to="/dashboard" style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
         <span>&larr;</span> Back to Dashboard
       </Link>
       
@@ -72,10 +92,35 @@ export default function ReportDetail() {
           </div>
         </div>
 
+        <div style={{ marginTop: '1.5rem', background: 'rgba(236, 72, 153, 0.05)', border: '1px solid #ec4899', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 0 15px rgba(236, 72, 153, 0.08)' }}>
+          <h3 style={{ marginTop: 0, color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+            <span style={{ fontSize: '1.25rem' }}>🔮</span> Future Impact Prediction
+          </h3>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
+            {predicting ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-dim)' }}>
+                <LoadingSpinner /> Analyzing 24-48 hour risk...
+              </div>
+            ) : impactPrediction?.error ? (
+              <div style={{ color: 'var(--text-dim)' }}>Prediction unavailable</div>
+            ) : impactPrediction ? (
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                <div>
+                  <strong style={{ color: 'var(--text-dim)' }}>Risk Level:</strong>{' '}
+                  <span style={{ color: impactPrediction.riskLevel === 'Severe' || impactPrediction.riskLevel === 'High' ? 'var(--critical)' : impactPrediction.riskLevel === 'Medium' ? 'var(--medium)' : 'var(--low)', fontWeight: 'bold' }}>
+                    {impactPrediction.riskLevel}
+                  </span>
+                </div>
+                <div><strong style={{ color: 'var(--text-dim)' }}>Predicted Impact:</strong> <span style={{ color: 'var(--text-main)' }}>{impactPrediction.predictedImpact}</span></div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
         {report.status !== 'assigned' && report.status !== 'resolved' && (
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <button 
-              onClick={() => navigate(`/admin/report/${id}/match`)}
+              onClick={() => navigate(`/match/${id}`)}
               style={{...btnStyle, padding: '0.75rem 2rem', fontSize: '1rem', background: 'var(--accent-gradient)'}}
             >
               Find Volunteers &rarr;
