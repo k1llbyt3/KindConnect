@@ -30,7 +30,16 @@ body {
   margin: 0;
   line-height: 1.6;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -76,17 +85,18 @@ th {
   font-family: 'Outfit', sans-serif;
   font-weight: 500;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   letter-spacing: 0.05em;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   color: var(--text-dim);
 }
 
 td {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  font-size: 0.9rem;
 }
 
 tbody tr {
@@ -152,10 +162,26 @@ select:hover, select:focus {
 
 /* Layout Utilities */
 .page-container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem;
   animation: fadeIn 0.5s ease-out;
+  flex: 1;
+}
+
+.home-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 1rem;
+}
+
+@media (max-width: 640px) {
+  .page-container {
+    padding: 1rem;
+  }
 }
 
 @keyframes fadeIn {
@@ -164,5 +190,11 @@ select:hover, select:focus {
 }
 
 .admin-dashboard, .home {
-  padding: 2rem;
+  padding: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .admin-dashboard, .home {
+    padding: 1rem;
+  }
 }

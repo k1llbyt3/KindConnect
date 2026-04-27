@@ -9,15 +9,12 @@ service cloud.firestore {
 
     // 🤝 VOLUNTEERS
     match /volunteers/{volunteerId} {
-      allow read: if true;
-      allow create: if request.resource.data.name is string 
-                    && request.resource.data.skills is list;
-      allow update: if true;
+      allow read, write: if true;
     }
 
     // 📋 TASKS
     match /tasks/{taskId} {
-      allow read, create, update: if true;
+      allow read, write: if true;
     }
   }
 }

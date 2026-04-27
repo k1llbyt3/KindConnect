@@ -96,14 +96,14 @@ export default function VolunteerMatch() {
   )
 
   return (
-    <div className="volunteer-match page-container" style={{ maxWidth: '900px' }}>
-      <Link to={`/admin/report/${id}`} style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', transition: 'color 0.2s' }}>
+    <div className="volunteer-match page-container" style={{ maxWidth: '800px' }}>
+      <Link to={`/admin/report/${id}`} style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
         <span>&larr;</span> Back to Report
       </Link>
 
-      <div style={{ marginBottom: '3rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-        <h1 className="gradient-text" style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem' }}>Match Volunteers</h1>
-        <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '1.1rem' }}>
+      <div style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+        <h1 className="gradient-text" style={{ margin: '0 0 0.25rem 0', fontSize: '1.75rem' }}>Match Volunteers</h1>
+        <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '0.95rem' }}>
           Finding best matches for: <strong style={{ color: 'var(--text-main)' }}>{report?.issueType?.toUpperCase()}</strong> at <strong style={{ color: 'var(--text-main)' }}>{report?.location}</strong>
         </p>
       </div>
@@ -116,34 +116,34 @@ export default function VolunteerMatch() {
         <div style={{ display: 'grid', gap: '1.5rem' }}>
           {matches.map((m, index) => (
             <div key={m.volunteerId} className="card match-card" style={matchCardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
                       {m.volunteerName}
                     </h3>
                     <span style={{ 
                       background: 'var(--accent-gradient)', 
                       color: 'white', 
-                      padding: '0.25rem 0.75rem', 
+                      padding: '0.15rem 0.6rem', 
                       borderRadius: '999px',
-                      fontSize: '0.85rem',
+                      fontSize: '0.75rem',
                       fontWeight: 'bold',
                       boxShadow: 'var(--shadow-glow)'
                     }}>
                       {m.matchScore}% Match
                     </span>
                   </div>
-                  <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.95rem', fontStyle: 'italic', display: 'flex', gap: '0.5rem' }}>
-                    <span>✨</span> {m.matchReason}
+                  <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.85rem', fontStyle: 'italic', display: 'flex', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '1rem' }}>✨</span> {m.matchReason}
                   </p>
                 </div>
                 
-                <div style={{ marginLeft: '2rem' }}>
+                <div>
                   <button 
                     onClick={() => handleAssign(m)}
                     disabled={assigningId === m.volunteerId}
-                    style={btnStyle}
+                    style={{...btnStyle, whiteSpace: 'nowrap'}}
                   >
                     {assigningId === m.volunteerId ? 'Assigning...' : 'Assign Task'}
                   </button>
@@ -158,7 +158,7 @@ export default function VolunteerMatch() {
 }
 
 const matchCardStyle = {
-  padding: '1.5rem 2rem',
+  padding: '1rem 1.25rem',
   border: '1px solid var(--border)',
   transition: 'all 0.3s ease',
 }
@@ -167,9 +167,9 @@ const btnStyle = {
   background: 'rgba(255, 255, 255, 0.1)',
   color: 'white',
   border: '1px solid var(--border)',
-  padding: '0.8rem 1.5rem',
+  padding: '0.6rem 1.2rem',
   borderRadius: '8px',
   cursor: 'pointer',
   fontWeight: '600',
-  fontSize: '1rem'
+  fontSize: '0.9rem'
 }

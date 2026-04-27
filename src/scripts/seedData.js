@@ -1,46 +1,85 @@
-import { addVolunteer, addReport, updateReport } from '../firebase'
+import { addVolunteer, addReport, updateReport, db } from '../firebase'
 import { scoreUrgency } from '../gemini'
 import { fallbackUrgencyScore, scoreToLevel } from '../utils/fallbackScore'
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
+
+const clearCollection = async (collectionName) => {
+  const snapshot = await getDocs(collection(db, collectionName))
+  for (const docSnap of snapshot.docs) {
+    await deleteDoc(doc(db, collectionName, docSnap.id))
+  }
+}
 
 const TEST_VOLUNTEERS = [
-  { name: 'Dr. Priya Sharma',  skills: ['medical', 'counseling'],    location: 'Koramangala, Bengaluru',     available: true,  phone: null },
-  { name: 'Rahul Verma',       skills: ['construction', 'driving'],   location: 'Whitefield, Bengaluru',      available: true,  phone: null },
-  { name: 'Anita Desai',       skills: ['logistics', 'admin'],        location: 'Indiranagar, Bengaluru',     available: true,  phone: null },
-  { name: 'Kiran Rao',         skills: ['tech', 'general'],           location: 'Electronic City, Bengaluru', available: true,  phone: null },
-  { name: 'Meera Joshi',       skills: ['teaching', 'translation'],   location: 'Jayanagar, Bengaluru',       available: false, phone: null },
+  { name: 'Dr. Priya Sharma',  skills: ['medical', 'counseling'],    location: 'Koramangala, Bengaluru',     available: true },
+  { name: 'Rahul Verma',       skills: ['construction', 'driving'],   location: 'Whitefield, Bengaluru',      available: true },
+  { name: 'Anita Desai',       skills: ['logistics', 'admin'],        location: 'Indiranagar, Bengaluru',     available: true },
+  { name: 'Kiran Rao',         skills: ['tech', 'general'],           location: 'Electronic City, Bengaluru', available: true },
+  { name: 'Meera Joshi',       skills: ['teaching', 'translation'],   location: 'Jayanagar, Bengaluru',       available: false },
+  { name: 'Arjun Patel',       skills: ['search_rescue', 'driving'],  location: 'Marathahalli, Bengaluru',    available: true },
+  { name: 'Sneha Reddy',       skills: ['medical', 'general'],        location: 'BTM Layout, Bengaluru',      available: true },
+  { name: 'Vikram Singh',      skills: ['security', 'logistics'],     location: 'Hebbal, Bengaluru',          available: true },
+  { name: 'Pooja Iyer',        skills: ['counseling', 'admin'],       location: 'Malleshwaram, Bengaluru',    available: true },
 ]
 
 const TEST_REPORTS = [
   {
-    submittedBy: 'Test Field Worker',
     issueType: 'medical',
-    description: 'Elderly woman aged 70 collapsed near Devanahalli. Unresponsive, no doctor within 20km. Needs immediate evacuation and medical attention.',
-    location: 'Devanahalli village outskirts, Bengaluru Rural',
+    description: 'Elderly woman aged 70 collapsed near Devanahalli. Needs immediate medical attention.',
+    location: 'Devanahalli, Bengaluru',
     severityRaw: 5,
-    affectedCount: 1,
-    photoUrl: null,
+    affectedCount: 1
   },
   {
-    submittedBy: 'Test Field Worker',
     issueType: 'water',
-    description: 'Community of 50 families has had no drinking water for 2 days. Children are showing signs of dehydration. Local borewell stopped working.',
-    location: 'Anekal taluk, Bengaluru',
+    description: 'Community of 50 families without drinking water for 2 days. Borewell broken.',
+    location: 'Anekal, Bengaluru',
     severityRaw: 4,
-    affectedCount: 50,
-    photoUrl: null,
+    affectedCount: 50
   },
   {
-    submittedBy: 'Test Field Worker',
     issueType: 'infrastructure',
-    description: 'Road pothole near the primary school. Vehicles swerve to avoid it. Not dangerous but should be repaired soon.',
+    description: 'Large pothole near primary school causing traffic issues.',
     location: 'Sarjapur Road, Bengaluru',
     severityRaw: 2,
-    affectedCount: 20,
-    photoUrl: null,
+    affectedCount: 20
+  },
+  {
+    issueType: 'food',
+    description: 'Migrant worker camp with 100 people running critically low on rations due to transport strike.',
+    location: 'Peenya Industrial Area, Bengaluru',
+    severityRaw: 4,
+    affectedCount: 100
+  },
+  {
+    issueType: 'safety',
+    description: 'Fallen tree blocking the main exit route of a residential layout, creating a fire hazard trap.',
+    location: 'HSR Layout Sector 2, Bengaluru',
+    severityRaw: 5,
+    affectedCount: 200
+  },
+  {
+    issueType: 'shelter',
+    description: 'Heavy rains flooded 15 makeshift tents. Families need temporary tarps and dry sleeping areas.',
+    location: 'Bellandur lakebed, Bengaluru',
+    severityRaw: 4,
+    affectedCount: 65
+  },
+  {
+    issueType: 'medical',
+    description: 'Minor dengue outbreak suspected. Three kids with high fever need checkups and mosquito nets.',
+    location: 'KR Puram, Bengaluru',
+    severityRaw: 3,
+    affectedCount: 3
   },
 ]
 
 export const seedAll = async () => {
+  console.log('🧹 Clearing old data to prevent duplicates...')
+  await clearCollection('reports')
+  await clearCollection('volunteers')
+  await clearCollection('tasks')
+  
   console.log('🌱 START SEEDING...');
   console.log('🌱 Seeding volunteers...')
   for (const v of TEST_VOLUNTEERS) {

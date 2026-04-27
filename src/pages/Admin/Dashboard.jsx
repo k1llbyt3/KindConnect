@@ -29,17 +29,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard page-container">
-      <header className="header" style={{ marginBottom: '3rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="header" style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 className="gradient-text" style={{ margin: 0, fontSize: '2.5rem' }}>Admin Dashboard</h1>
-          <p style={{ color: 'var(--text-dim)', margin: '0.5rem 0 0 0' }}>Monitor and assign incoming community reports</p>
+          <h1 className="gradient-text" style={{ margin: 0, fontSize: '1.75rem' }}>Admin Dashboard</h1>
+          <p style={{ color: 'var(--text-dim)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>Monitor and assign incoming community reports</p>
         </div>
         <Link to="/" style={{ color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span>&larr;</span> Change Role
         </Link>
       </header>
 
-      <div className="filters" style={{ display: 'flex', gap: '1rem', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+      <div className="filters" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={selectStyle}>
           <option value="All">All Types</option>
           <option value="water">💧 Water</option>
@@ -115,8 +115,8 @@ const selectStyle = {
   borderRadius: '4px'
 }
 
-const thStyle = { padding: '1rem 0.5rem', color: 'var(--text-dim)' }
-const tdStyle = { padding: '1rem 0.5rem' }
+const thStyle = { padding: '0.75rem 0.5rem', color: 'var(--text-dim)', fontSize: '0.8rem' }
+const tdStyle = { padding: '0.75rem 0.5rem', fontSize: '0.85rem' }
 
 const linkStyle = {
   background: 'var(--accent-primary)',

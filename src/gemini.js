@@ -2,31 +2,33 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const callGemini = async (prompt) => {
   const models = [
-    'gemini-3-flash-preview',       // Primary (Verified Working)
-    'gemini-2.5-flash',             // High-RPM Fallback
-    'gemini-2.0-flash',             // High-RPM Fallback
-    'gemini-flash-latest',          // Stable General Fallback
-    'gemini-3.1-flash-lite-preview' // Ultra-lightweight Fallback
+    'gemini-flash-latest',           // PRIMARY: Stable alias
+    'gemini-2.5-flash-lite',         // NEW: Fast and works well
+    'gemini-2.0-flash',              // SECONDARY: Good fallback
+    'gemini-2.5-flash'               // HEAVY-LIFTING: Reliable
   ]
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000) 
+    const timeout = setTimeout(() => controller.abort(), 60000) 
 
+    let res = null;
     try {
       console.log(`🤖 Attempting Gemini with ${model} (Priority ${i + 1}/${models.length})...`)
-      const res = await fetch(url, {
+      res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY
+        },
         signal: controller.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { 
-            temperature: 0.1, 
-            maxOutputTokens: 1000,
-            responseMimeType: "application/json"
+            temperature: 0.1, // Low temp for reliable JSON
+            maxOutputTokens: 800
           },
         }),
       })
@@ -36,8 +38,24 @@ const callGemini = async (prompt) => {
         const data = await res.json()
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text
         if (rawText) {
-          const clean = rawText.replace(/```json|```/gi, '').trim()
-          return JSON.parse(clean)
+          let clean = rawText.replace(/```json|```/gi, '').trim();
+          
+          // Robust JSON extraction
+          const jsonMatch = clean.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+          if (jsonMatch) {
+            clean = jsonMatch[0];
+          }
+          
+          // Auto-fix if model forgot array brackets: `{}, {}`
+          if (clean.startsWith('{') && clean.endsWith('}') && clean.includes('},')) {
+             clean = `[${clean}]`;
+          }
+          
+          try {
+            return JSON.parse(clean);
+          } catch (e) {
+            throw new Error('Invalid JSON format');
+          }
         }
       } else {
         const errBody = await res.text()
@@ -49,8 +67,13 @@ const callGemini = async (prompt) => {
     }
 
     if (i < models.length - 1) {
-      console.log(`⏳ Model ${model} failed. Retrying with next priority model in 2s...`)
-      await sleep(2000) 
+      if (res && res.status === 429) {
+        console.log(`⏳ Quota exceeded (429). Pausing 5.5s...`)
+        await new Promise(r => setTimeout(r, 5500))
+      } else {
+        console.log(`⏳ Model ${model} failed. Retrying with next priority model in 2s...`)
+        await new Promise(r => setTimeout(r, 2000))
+      }
     }
   }
 
@@ -61,31 +84,24 @@ const callGemini = async (prompt) => {
 // ─── URGENCY SCORING ────────────────────────────────────────
 
 export const scoreUrgency = async (report) => {
-  const desc = (report.description || '').slice(0, 800)
+  const desc = (report.description || '').slice(0, 250)
 
-  const prompt = `You are an emergency triage assistant for an NGO. Analyze the following community issue report and return a JSON response only. No markdown, no explanation outside the JSON.
+  const prompt = `NGO Triage. Reply JSON only.
+Type:${report.issueType}
+Desc:${desc}
+Loc:${report.location}
+Sev:${report.severityRaw}/5
+Pop:${report.affectedCount}
 
-Report Details:
-- Issue Type: ${report.issueType}
-- Description: ${desc}
-- Location: ${report.location}
-- Self-reported severity: ${report.severityRaw}/5
-- Number of people affected: ${report.affectedCount}
-
-Return ONLY this JSON structure:
 {
-  "urgencyScore": <integer 0-100>,
+  "urgencyScore": <int 0-100>,
   "urgencyLevel": "<Critical|High|Medium|Low>",
-  "aiSummary": "<one sentence describing the issue clearly>",
-  "aiActionCategory": "<specific action needed, e.g. Emergency water supply>",
-  "aiReason": "<one sentence explaining why you gave this score>"
+  "aiSummary": "<brief issue summary>",
+  "aiActionCategory": "<action>",
+  "aiReason": "<brief reason>"
 }
 
-Scoring guide:
-- 80-100 (Critical): Life-threatening, immediate danger, large population affected
-- 60-79 (High): Urgent but not immediately life-threatening, significant impact
-- 40-59 (Medium): Important but can wait 24-48 hours
-- 0-39 (Low): Non-urgent, quality of life issue`
+Critical(80-100): life-threat. High(60-79): urgent. Med(40-59): 24h. Low(0-39): non-urgent.`
 
   const parsed = await callGemini(prompt)
   if (!parsed) return null
@@ -127,29 +143,14 @@ export const matchVolunteers = async (report, volunteers) => {
     }))
   )
 
-  const prompt = `You are a volunteer coordinator. Match the best volunteers for this emergency task.
+  const prompt = `Match volunteers to task. JSON array of top 3 ONLY.
+Task: ${report.issueType} | ${report.aiActionCategory || 'Help'} | Loc: ${report.location}
 
-Task:
-- Issue: ${report.issueType}
-- Description: ${report.aiSummary || report.description?.slice(0, 200)}
-- Action needed: ${report.aiActionCategory || 'Community assistance'}
-- Location: ${report.location}
-- Urgency: ${report.urgencyLevel}
-
-Available volunteers (JSON array):
+Vols:
 ${volunteersJson}
 
-Return ONLY a JSON array of the top 3 volunteer matches (or fewer if fewer exist), sorted by best match first:
-[
-  {
-    "volunteerId": "<id from input>",
-    "volunteerName": "<name from input>",
-    "matchScore": <integer 0-100>,
-    "matchReason": "<one sentence why this volunteer is a good match>"
-  }
-]
-
-Consider: skill relevance to the issue type, location proximity, reliabilityScore. Only include available volunteers.`
+Output format:
+[{"volunteerId":"<id>","volunteerName":"<name>","matchScore":<0-100>,"matchReason":"<brief>"}]`
 
   const parsed = await callGemini(prompt)
 
