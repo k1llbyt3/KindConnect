@@ -1,20 +1,15 @@
 import { useState, useEffect } from 'react'
-import { subscribeToReports, getVolunteers } from './firebase'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import { seedAll } from './scripts/seedData'
 import './index.css'
 
-function App() {
-  const [reports, setReports] = useState([])
-  const [volunteers, setVolunteers] = useState([])
-  const [isSeeding, setIsSeeding] = useState(false)
+// Admin Pages
+import AdminDashboard from './pages/Admin/Dashboard'
+import ReportDetail from './pages/Admin/ReportDetail'
+import VolunteerMatch from './pages/Admin/VolunteerMatch'
 
-  useEffect(() => {
-    // Real-time listener for reports
-    const unsub = subscribeToReports(setReports)
-    // One-time fetch for volunteers
-    getVolunteers().then(setVolunteers)
-    return () => unsub()
-  }, [])
+function Home() {
+  const [isSeeding, setIsSeeding] = useState(false)
 
   const handleSeed = async () => {
     setIsSeeding(true)
@@ -36,48 +31,76 @@ function App() {
   };
 
   return (
-    <div className="dashboard">
-      <header className="header">
-        <h1>KindConnect <span style={{fontSize: '1rem', color: 'var(--text-dim)'}}>— Base Dashboard</span></h1>
-        <button 
-          className="btn-seed" 
-          onClick={handleSeed} 
-          disabled={isSeeding}
-        >
-          {isSeeding ? '🌱 Seeding...' : '🌱 Seed Test Data'}
-        </button>
-      </header>
+    <div className="home page-container" style={{ maxWidth: '600px', margin: '4rem auto', textAlign: 'center', background: 'transparent', border: 'none', boxShadow: 'none' }}>
+      <h1 className="gradient-text" style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>KindConnect</h1>
+      <p style={{ color: 'var(--text-dim)', marginBottom: '3rem', fontSize: '1.2rem' }}>
+        Smart Resource Allocation & Volunteer Coordination
+      </p>
 
-      <div className="grid">
-        <section>
-          <h2 className="section-title">Reports ({reports.length})</h2>
-          <div className="reports-list">
-            {reports.map(r => (
-              <div key={r.id} className="report-card" style={{borderLeft: `4px solid var(--${r.urgencyLevel?.toLowerCase() || 'border'})`}}>
-                <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <strong>{r.issueType.toUpperCase()}</strong>
-                  <span>{r.urgencyLevel || 'Scoring...'}</span>
-                </div>
-                <p style={{margin: '10px 0', color: 'var(--text-dim)'}}>{r.description}</p>
-                <div style={{fontSize: '0.8rem'}}>📍 {r.location}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <aside>
-          <div className="volunteers-panel">
-            <h2 className="section-title">Volunteers ({volunteers.length})</h2>
-            {volunteers.map(v => (
-              <div key={v.id} style={{padding: '10px 0', borderBottom: '1px solid var(--border)'}}>
-                <div>{v.name}</div>
-                <div style={{fontSize: '0.7rem', color: 'var(--accent-secondary)'}}>{v.skills.join(', ')}</div>
-              </div>
-            ))}
-          </div>
-        </aside>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginBottom: '4rem' }}>
+        <Link to="/admin" style={roleBtnStyle} className="role-btn">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👨‍💼</div>
+          <div>Admin / NGO Manager</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)', fontWeight: 'normal', marginTop: '0.5rem' }}>Manage reports, assign tasks, track progress</div>
+        </Link>
+        <div style={{...roleBtnStyle, opacity: 0.4, cursor: 'not-allowed'}}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📱</div>
+          <div>Field Worker (Coming Soon)</div>
+        </div>
+        <div style={{...roleBtnStyle, opacity: 0.4, cursor: 'not-allowed'}}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤝</div>
+          <div>Volunteer (Coming Soon)</div>
+        </div>
       </div>
+
+      <button 
+        onClick={handleSeed} 
+        disabled={isSeeding}
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          color: 'var(--text-dim)',
+          border: '1px solid var(--border)',
+          padding: '0.8rem 1.5rem',
+          borderRadius: '8px',
+          cursor: isSeeding ? 'not-allowed' : 'pointer',
+          fontSize: '0.9rem'
+        }}
+      >
+        {isSeeding ? '🌱 Seeding Test Data...' : '🌱 Seed Test Data'}
+      </button>
     </div>
+  )
+}
+
+const roleBtnStyle = {
+  background: 'var(--card-bg)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--border)',
+  padding: '2rem',
+  borderRadius: '16px',
+  color: 'var(--text-main)',
+  textDecoration: 'none',
+  fontSize: '1.2rem',
+  fontWeight: '600',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  boxShadow: 'var(--shadow-sm)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center'
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/report/:id" element={<ReportDetail />} />
+        <Route path="/admin/report/:id/match" element={<VolunteerMatch />} />
+      </Routes>
+    </Router>
   )
 }
 
