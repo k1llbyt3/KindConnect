@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function PartnerNGO() {
   const [clusters, setClusters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pledging, setPledging] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'clusters'), orderBy('createdAt', 'desc'));
@@ -22,6 +23,21 @@ export default function PartnerNGO() {
     });
     return () => unsub();
   }, []);
+
+  const handleOfferResources = async (clusterId) => {
+    setPledging(clusterId);
+    try {
+      await updateDoc(doc(db, 'clusters', clusterId), {
+        resourcePledged: true,
+        pledgedAt: new Date()
+      });
+    } catch (e) {
+      console.error('Failed to pledge resources', e);
+      alert('Failed to update cluster. Check permissions.');
+    } finally {
+      setPledging(null);
+    }
+  };
 
   return (
     <div className="page-container">
@@ -53,16 +69,20 @@ export default function PartnerNGO() {
                       <span>📑 Reports: {c.reportIds?.length || 0}</span>
                     </div>
                   </div>
-                  <button style={{
-                    background: 'var(--accent-primary)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.6rem 1.2rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}>
-                    Offer Resources
+                  <button 
+                    onClick={() => handleOfferResources(c.id)}
+                    disabled={c.resourcePledged || pledging === c.id}
+                    style={{
+                      background: c.resourcePledged ? 'var(--bg-dark)' : 'var(--accent-primary)',
+                      color: c.resourcePledged ? '#10b981' : 'white',
+                      border: c.resourcePledged ? '1px solid #10b981' : 'none',
+                      padding: '0.6rem 1.2rem',
+                      borderRadius: '8px',
+                      cursor: c.resourcePledged ? 'default' : 'pointer',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s'
+                    }}>
+                    {c.resourcePledged ? 'Resources Pledged ✅' : (pledging === c.id ? 'Processing...' : 'Offer Resources')}
                   </button>
                 </div>
                 <div style={{ background: 'var(--bg-dark)', padding: '1rem', borderRadius: '8px', fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: '1.5' }}>

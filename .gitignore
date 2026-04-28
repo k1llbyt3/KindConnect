@@ -18,9 +18,16 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .agents
+graphify-out/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc

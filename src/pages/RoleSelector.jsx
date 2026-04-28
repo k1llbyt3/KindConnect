@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function RoleSelector({ setRole }) {
   const navigate = useNavigate();
@@ -14,7 +16,36 @@ export default function RoleSelector({ setRole }) {
       <div className="page-container" style={{ textAlign: 'center', maxWidth: '1000px', padding: '1rem' }}>
         <div style={{ marginBottom: '2rem' }}>
           <h1 className="gradient-text" style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>Smart Resource Allocation</h1>
-          <p style={{ color: 'var(--text-dim)', fontSize: '1rem' }}>Select your role to continue</p>
+          <p style={{ color: 'var(--text-dim)', fontSize: '1rem', marginBottom: '1.5rem' }}>Select your role to continue</p>
+          <button 
+            onClick={async () => {
+              try {
+                await addDoc(collection(db, 'tasks'), {
+                  issueType: 'medical', reportLocation: 'Northside Clinic', volunteerName: 'Dr. Sarah Jenkins',
+                  status: 'completed', urgencyLevel: 'Critical', affectedCount: 45, hoursToComplete: 1.5,
+                  impactStatement: 'On today, volunteer Dr. Sarah Jenkins provided emergency medical triage at Northside Clinic, stabilizing 45 critically injured patients.',
+                  createdAt: serverTimestamp(), completedAt: serverTimestamp()
+                });
+                await addDoc(collection(db, 'clusters'), {
+                  issueType: 'shelter', location: 'Downtown Evacuation Center', combinedAffectedCount: 320,
+                  urgencyLevel: 'Critical', clusterReason: 'Multiple reports of displaced families arriving at the downtown center without basic supplies.',
+                  createdAt: serverTimestamp(), status: 'open',
+                  predictedResources: [
+                    { item: 'Emergency Blankets', quantity: 320, unit: 'Pieces', importance: 'High' },
+                    { item: 'Drinking Water', quantity: 960, unit: 'Liters', importance: 'High' },
+                    { item: 'First Aid Kits', quantity: 30, unit: 'Kits', importance: 'Medium' }
+                  ]
+                });
+                alert('Demo data seeded successfully! Check the Live Impact Feed and Funding tabs.');
+              } catch (e) {
+                alert('Error seeding data: ' + e.message);
+                console.error(e);
+              }
+            }}
+            style={{ background: 'var(--card-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold' }}
+          >
+            🌱 Seed Demo Data
+          </button>
         </div>
 
         <div style={{ 

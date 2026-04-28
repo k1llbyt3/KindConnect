@@ -2,29 +2,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Limits access to the demo period to prevent long-term public access
+    function isDemoPeriod() {
+      return request.time < timestamp.date(2026, 6, 1);
+    }
+
     // 🚨 EMERGENCY REPORTS
     match /reports/{reportId} {
-      allow read, write: if true; 
+      allow read, write: if isDemoPeriod(); 
     }
 
     // 🤝 VOLUNTEERS
     match /volunteers/{volunteerId} {
-      allow read, write: if true;
+      allow read, write: if isDemoPeriod();
     }
 
     // 📋 TASKS
     match /tasks/{taskId} {
-      allow read, write: if true;
+      allow read, write: if isDemoPeriod();
     }
 
-    // 🧩 CLUSTERS
+    // 🧩 CLUSTERS (Required for Partner NGO & Funding)
     match /clusters/{clusterId} {
-      allow read, write: if true;
+      allow read, write: if isDemoPeriod();
     }
 
     // 📊 INSIGHTS
     match /insights/{insightId} {
-      allow read, write: if true;
+      allow read, write: if isDemoPeriod();
     }
   }
 }

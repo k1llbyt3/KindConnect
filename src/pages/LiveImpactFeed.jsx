@@ -15,12 +15,22 @@ export default function LiveImpactFeed() {
     return () => unsub();
   }, []);
 
-  const impactTasks = tasks.filter(t => t.status === 'completed' && t.impactStatement)
+  const impactTasksAll = tasks
+    .filter(t => t.status === 'completed' && t.impactStatement)
     .sort((a, b) => {
       const timeA = a.completedAt?.toMillis?.() || new Date(a.completedAt).getTime() || 0;
       const timeB = b.completedAt?.toMillis?.() || new Date(b.completedAt).getTime() || 0;
       return timeB - timeA;
     });
+
+  const impactTasks = [];
+  const seen = new Set();
+  for (const t of impactTasksAll) {
+    if (!seen.has(t.impactStatement)) {
+      impactTasks.push(t);
+      seen.add(t.impactStatement);
+    }
+  }
 
   return (
     <div className="page-container">

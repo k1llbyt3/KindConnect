@@ -137,10 +137,14 @@ export default function ResourceFunding() {
                       </div>
 
                       <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
-                        <button style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        <button 
+                          onClick={() => alert('✅ Grant Proposal securely submitted to the KindConnect Global Donor Network. You will be notified of funding status within 24 hours.')}
+                          style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                           Submit to Donors
                         </button>
-                        <button style={{ background: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer' }}>
+                        <button 
+                          onClick={() => window.print()}
+                          style={{ background: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer' }}>
                           Download PDF
                         </button>
                       </div>

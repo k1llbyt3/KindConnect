@@ -577,7 +577,7 @@ Location: ${cluster.location}
 People Affected: ${cluster.combinedAffectedCount}
 Predicted Resources Needed: ${JSON.stringify(cluster.predictedResources || {})}
 
-Return ONLY this JSON format:
+Return strictly ONLY a JSON object. No markdown formatting, no backticks, no comments.
 {
   "title": "<Catchy proposal title>",
   "executiveSummary": "<2 sentence summary>",

@@ -58,6 +58,13 @@ export default function VerifyTask() {
         return;
       }
 
+      const currentTaskData = taskSnap.data();
+      if (currentTaskData.status === 'completed') {
+        setError('This task has already been verified and completed.');
+        setLoading(false);
+        return;
+      }
+
       // 2. Upload photo
       const storage = getStorage();
       const photoRef = ref(storage, `task-completions/${taskSnap.id}-${Date.now()}.jpg`);

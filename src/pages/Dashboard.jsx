@@ -37,7 +37,23 @@ export default function AdminDashboard() {
     return scoreB - scoreA
   })
 
-  const completedTasksWithImpact = tasks.filter(t => t.status === 'completed' && t.impactStatement)
+  const sortedImpactTasks = tasks
+    .filter(t => t.status === 'completed' && t.impactStatement)
+    .sort((a, b) => {
+      const timeA = a.completedAt?.toMillis?.() || new Date(a.completedAt).getTime() || 0;
+      const timeB = b.completedAt?.toMillis?.() || new Date(b.completedAt).getTime() || 0;
+      return timeB - timeA;
+    });
+
+  const displayImpacts = [];
+  const seenStatements = new Set();
+  for (const t of sortedImpactTasks) {
+    if (!seenStatements.has(t.impactStatement)) {
+      displayImpacts.push(t);
+      seenStatements.add(t.impactStatement);
+    }
+  }
+  const completedTasksWithImpact = displayImpacts.slice(0, 8);
   const latestInsight = insights[0]
 
   const handleGenerateInsight = async () => {
