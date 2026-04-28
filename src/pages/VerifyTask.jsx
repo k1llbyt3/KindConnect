@@ -3,6 +3,7 @@ import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Link, useNavigate } from 'react-router-dom';
+import { generateImpactStatement } from '../gemini';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function VerifyTask() {
@@ -64,10 +65,19 @@ export default function VerifyTask() {
       const photoUrl = await getDownloadURL(photoRef);
 
       // 3. Update task
+      const taskDataForImpact = {
+        ...taskSnap.data(),
+        completionNote: completionNote.trim() || 'Verified with photo proof',
+        completedAt: new Date()
+      };
+      const impact = await generateImpactStatement(taskDataForImpact);
+
       await updateDoc(taskRef, {
         status: 'completed',
         completionNote: completionNote.trim() || '',
-        completionPhotoUrl: photoUrl
+        completionPhotoUrl: photoUrl,
+        impactStatement: impact || 'Task completed and verified.',
+        completedAt: new Date()
       });
 
       // 4. Update related report

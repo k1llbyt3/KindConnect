@@ -300,7 +300,7 @@ Return only the sentence. No quotes, no extra text.`
 // ─── USP 2: REPORT CLUSTERING & CRISIS ESCALATION ────────────
 
 export const detectReportCluster = async (newReport, existingReports) => {
-  if (existingReports.length < 3) return null
+  if (existingReports.length < 1) return null
 
   const recent = existingReports
     .filter(r => r.status === 'open' && r.id !== newReport.id)
@@ -535,4 +535,71 @@ Return ONLY this JSON:
       avgResponseHrs: Number(avgResponseHrs) || 0
     }
   }
+}
+
+// ─── USP 6: PREDICTIVE RESOURCE CALCULATOR ────────────────────
+
+export const predictResourceNeeds = async (issueType, affectedCount, location) => {
+  const prompt = `You are an expert NGO logistics planner. 
+An emergency has been reported.
+Issue Type: ${issueType}
+People Affected: ${affectedCount}
+Location: ${location}
+
+Calculate the exact estimated survival resources needed for the first 48 hours for these ${affectedCount} people.
+Be realistic and specific.
+
+Return ONLY this JSON array format:
+[
+  { "item": "Drinking Water", "quantity": <number>, "unit": "Liters", "importance": "High" },
+  { "item": "Blankets", "quantity": <number>, "unit": "Pieces", "importance": "Medium" }
+]
+Keep the list to the top 4-5 most critical items.`;
+
+  const parsed = await callGemini(prompt);
+  if (!parsed || !Array.isArray(parsed)) {
+    return [
+      { item: "Water", quantity: affectedCount * 3, unit: "Liters", importance: "High" },
+      { item: "Emergency Food Rations", quantity: affectedCount * 2, unit: "Meals", importance: "High" },
+      { item: "First Aid Kits", quantity: Math.ceil(affectedCount / 10), unit: "Kits", importance: "Medium" }
+    ];
+  }
+  return parsed;
+}
+
+// ─── USP 7: AI EMERGENCY FUNDING & GRANT GENERATOR ────────────
+
+export const generateGrantProposal = async (cluster) => {
+  const prompt = `You are an expert NGO grant writer. 
+Generate a rapid micro-grant proposal to request emergency funding for a crisis cluster.
+Issue: ${cluster.issueType}
+Location: ${cluster.location}
+People Affected: ${cluster.combinedAffectedCount}
+Predicted Resources Needed: ${JSON.stringify(cluster.predictedResources || {})}
+
+Return ONLY this JSON format:
+{
+  "title": "<Catchy proposal title>",
+  "executiveSummary": "<2 sentence summary>",
+  "estimatedCostUSD": <number total cost estimated>,
+  "costBreakdown": [
+    { "category": "Water/Food", "amount": <number> }
+  ],
+  "impactPromise": "<1 sentence what this funding will achieve>"
+}`;
+
+  const parsed = await callGemini(prompt);
+  if (!parsed || !parsed.title) {
+    return {
+      title: `Emergency Relief Fund: ${cluster.location}`,
+      executiveSummary: `Immediate funding required to support ${cluster.combinedAffectedCount} individuals affected by ${cluster.issueType}.`,
+      estimatedCostUSD: cluster.combinedAffectedCount * 25,
+      costBreakdown: [
+        { category: "Basic Survival Supplies", amount: cluster.combinedAffectedCount * 20 },
+        { category: "Logistics", amount: cluster.combinedAffectedCount * 5 }
+      ],
+      impactPromise: "Provides 48 hours of critical survival support."
+    };
+  }
+  return parsed;
 }

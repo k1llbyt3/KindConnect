@@ -68,6 +68,30 @@ export default function PartnerNGO() {
                 <div style={{ background: 'var(--bg-dark)', padding: '1rem', borderRadius: '8px', fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
                   <strong style={{ color: 'var(--high)' }}>AI Cluster Analysis:</strong> {c.clusterReason}
                 </div>
+
+                {c.predictedResources && c.predictedResources.length > 0 && (
+                  <div style={{ marginTop: '1rem', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '1rem', borderRadius: '8px' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#38bdf8', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      📦 AI Predictive Resource Requirements
+                    </h4>
+                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                      Estimated needs for the first 48 hours for {c.combinedAffectedCount} affected individuals.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
+                      {c.predictedResources.map((res, i) => (
+                        <div key={i} style={{ background: 'var(--card-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: '0.8rem', color: res.importance === 'High' ? '#f87171' : 'var(--accent-secondary)', fontWeight: 'bold', marginBottom: '0.2rem' }}>
+                            {res.importance?.toUpperCase()} PRIORITY
+                          </div>
+                          <div style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{res.item}</div>
+                          <div style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginTop: '0.2rem' }}>
+                            {res.quantity} <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)', fontWeight: 'normal' }}>{res.unit}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}

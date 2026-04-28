@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addReport, updateReport, getReports, db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { scoreUrgency, detectReportCluster } from '../gemini';
+import { scoreUrgency, detectReportCluster, predictResourceNeeds } from '../gemini';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const inputStyle = {
@@ -116,6 +116,12 @@ export default function SubmitReport() {
             const clusterRes = await detectReportCluster(reportWithId, recentOpen);
             
             if (clusterRes && clusterRes.matchedReportIds && clusterRes.matchedReportIds.length > 0) {
+              const resourceNeeds = await predictResourceNeeds(
+                reportPayload.issueType, 
+                clusterRes.combinedAffectedCount, 
+                reportPayload.location
+              ).catch(() => []);
+
               const clusterPayload = {
                 createdAt: serverTimestamp(),
                 reportIds: [docId, ...clusterRes.matchedReportIds],
@@ -124,6 +130,7 @@ export default function SubmitReport() {
                 location: reportPayload.location,
                 urgencyLevel: aiResult?.urgencyLevel || 'Medium',
                 clusterReason: clusterRes.clusterReason,
+                predictedResources: resourceNeeds,
                 status: 'open'
               };
               const clusterRef = await addDoc(collection(db, 'clusters'), clusterPayload);

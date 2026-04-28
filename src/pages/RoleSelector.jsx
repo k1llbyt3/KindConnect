@@ -81,6 +81,16 @@ export default function RoleSelector({ setRole }) {
             <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Partner NGO</h2>
             <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>Coordinate resources and collaborate on large-scale clusters</p>
           </div>
+
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+            onClick={() => handleSelectRole(null, '/funding')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>💰</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: '#10b981' }}>Requirements & Funding</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>View predictive resource needs and generate micro-grants</p>
+          </div>
         </div>
       </div>
     </div>
