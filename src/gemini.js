@@ -230,14 +230,309 @@ Output JSON only:
         let clean = rawText.replace(/```json|```/gi, '').trim();
         const jsonMatch = clean.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
         if (jsonMatch) clean = jsonMatch[0];
-        const parsed = JSON.parse(clean);
-        if (parsed.predictedImpact && parsed.riskLevel) {
-          return parsed;
+        try {
+          const parsed = JSON.parse(clean);
+          if (parsed.predictedImpact && parsed.riskLevel) {
+            return parsed;
+          }
+        } catch (parseErr) {
+          console.warn("Impact Prediction JSON parse failed:", parseErr, "Raw Text:", clean);
         }
       }
     }
   } catch (err) {
     console.warn("Impact Prediction failed:", err);
   }
-  return null;
+  
+  // Fallback
+  return {
+    predictedImpact: "If left unresolved, this situation may worsen over the next 24-48 hours, potentially affecting more people in the area.",
+    riskLevel: "Medium"
+  };
+}
+
+// ─── USP 1: AUTO IMPACT STATEMENT GENERATOR ──────────────────
+
+export const generateImpactStatement = async (task) => {
+  if (task.impactStatement) return task.impactStatement
+
+  const prompt = `You are writing a one-sentence impact report for an NGO donor report.
+
+Task completed:
+- Volunteer: ${task.volunteerName}
+- Issue type: ${task.issueType}
+- Location: ${task.reportLocation}
+- Urgency: ${task.urgencyLevel}
+- People affected: ${task.affectedCount || 'several'}
+- Completion note: ${task.completionNote || 'Task completed successfully'}
+- Time from report to completion: ${task.hoursToComplete || 'within the day'}
+
+Write ONE sentence (max 40 words) that reads like a real impact report entry.
+Format: "On [date], volunteer [name] [action verb] [what happened] in [location], [outcome for community]."
+Return only the sentence. No quotes, no extra text.`
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 80 }
+      })
+    })
+    clearTimeout(timeout)
+    const data = await res.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    return text || null
+  } catch (e) {
+    clearTimeout(timeout)
+    return `On ${new Date().toLocaleDateString()}, volunteer ${task.volunteerName} responded to a ${task.urgencyLevel?.toLowerCase() || ''} ${task.issueType} issue in ${task.reportLocation}, completing the assigned task successfully.`
+  }
+}
+
+// ─── USP 2: REPORT CLUSTERING & CRISIS ESCALATION ────────────
+
+export const detectReportCluster = async (newReport, existingReports) => {
+  if (existingReports.length < 3) return null
+
+  const recent = existingReports
+    .filter(r => r.status === 'open' && r.id !== newReport.id)
+    .slice(0, 8)
+
+  if (recent.length === 0) return null
+
+  const existingJson = JSON.stringify(recent.map(r => ({
+    id: r.id,
+    issueType: r.issueType,
+    location: r.location,
+    summary: r.aiSummary || r.description?.slice(0, 100),
+    affectedCount: r.affectedCount
+  })))
+
+  const prompt = `You are analyzing NGO field reports to detect duplicate crisis reports.
+
+New report:
+- Type: ${newReport.issueType}
+- Location: ${newReport.location}
+- Summary: ${newReport.aiSummary || newReport.description?.slice(0, 150)}
+- Affected: ${newReport.affectedCount}
+
+Existing open reports:
+${existingJson}
+
+Are any existing reports describing the SAME underlying crisis as the new report?
+Same crisis = same issue type, same approximate location, same root cause.
+
+Return ONLY this JSON:
+{
+  "clusterFound": true | false,
+  "matchedReportIds": ["id1", "id2"],
+  "clusterReason": "one sentence explaining why these are the same crisis",
+  "combinedAffectedCount": <sum of affected counts of matched reports + new report>
+}
+
+If no cluster found: { "clusterFound": false, "matchedReportIds": [], "clusterReason": "", "combinedAffectedCount": 0 }`
+
+  const parsed = await callGemini(prompt)
+  if (!parsed || !parsed.clusterFound) return null
+
+  return {
+    matchedReportIds: parsed.matchedReportIds || [],
+    clusterReason: parsed.clusterReason,
+    combinedAffectedCount: Number(parsed.combinedAffectedCount) || newReport.affectedCount
+  }
+}
+
+// ─── USP 3: VOLUNTEER BURNOUT & FATIGUE DETECTION ────────────
+
+export const checkVolunteerWellbeing = async (volunteer, recentTasks, updateVolunteerFunc) => {
+  if (!recentTasks || recentTasks.length < 2) {
+    return { wellbeingStatus: 'Green', reason: 'Insufficient task history — assumed available.' }
+  }
+
+  if (volunteer.wellbeingCheckedAt) {
+    const checkedAt = volunteer.wellbeingCheckedAt.toDate?.() || new Date(volunteer.wellbeingCheckedAt)
+    const hoursSince = (Date.now() - checkedAt) / (1000 * 60 * 60)
+    if (hoursSince < 6 && volunteer.wellbeingStatus) {
+      return { wellbeingStatus: volunteer.wellbeingStatus, reason: volunteer.wellbeingReason }
+    }
+  }
+
+  const taskSummary = recentTasks.slice(0, 5).map(t => ({
+    issueType: t.issueType,
+    urgencyLevel: t.urgencyLevel,
+    completedAt: t.completedAt || 'unknown',
+    note: t.completionNote?.slice(0, 80) || 'none'
+  }))
+
+  const prompt = `You are a volunteer welfare coordinator for an NGO.
+
+Volunteer: ${volunteer.name}
+Recent completed tasks (last 5):
+${JSON.stringify(taskSummary)}
+
+Assess this volunteer's current workload and potential fatigue.
+
+Return ONLY this JSON:
+{
+  "wellbeingStatus": "Green" | "Yellow" | "Red",
+  "reason": "<one sentence explanation for the admin>"
+}
+
+Green = volunteer is fine, can take more tasks
+Yellow = showing signs of heavy load, assign with caution
+Red = overworked or handling repeated high-stress tasks, recommend rest`
+
+  const parsed = await callGemini(prompt)
+
+  if (!parsed) {
+    return { wellbeingStatus: 'Green', reason: 'Unable to assess — assuming available.' }
+  }
+
+  const validStatuses = ['Green', 'Yellow', 'Red']
+  const status = validStatuses.includes(parsed.wellbeingStatus) ? parsed.wellbeingStatus : 'Green'
+
+  if (updateVolunteerFunc) {
+    await updateVolunteerFunc(volunteer.id, {
+      wellbeingStatus: status,
+      wellbeingReason: parsed.reason,
+      wellbeingCheckedAt: new Date()
+    })
+  }
+
+  return { wellbeingStatus: status, reason: parsed.reason }
+}
+
+// ─── USP 4: SMART VOLUNTEER TASK BRIEF ───────────────────────
+
+export const generateTaskBrief = async (task, volunteer) => {
+  if (task.taskBrief) return task.taskBrief
+
+  const prompt = `You are briefing a volunteer for an NGO emergency task. Write a clear, action-oriented task brief in plain language. No jargon. Max 60 words.
+
+Task:
+- Issue: ${task.issueType}
+- Summary: ${task.reportSummary || task.aiSummary || task.description?.slice(0,100)}
+- Location: ${task.reportLocation || task.location}
+- Urgency: ${task.urgencyLevel}
+- People affected: ${task.affectedCount || 'several'}
+
+Volunteer skills: ${volunteer.skills?.join(', ')}
+
+Write a brief that:
+1. Tells them exactly what to do first
+2. Mentions their specific skill relevance
+3. States the urgency clearly
+4. Ends with one practical tip
+
+Return only the brief text. No headers, no bullets, just plain paragraph.`
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': import.meta.env.VITE_GEMINI_API_KEY
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 120 }
+      })
+    })
+    clearTimeout(timeout)
+    const data = await res.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    return text || null
+  } catch (e) {
+    clearTimeout(timeout)
+    return `You have been assigned a ${task.urgencyLevel?.toLowerCase() || 'medium'} priority ${task.issueType} task in ${task.reportLocation || task.location}. Please proceed to the location as soon as possible and update your task status when you arrive.`
+  }
+}
+
+// ─── USP 5: WEEKLY CRISIS INSIGHT SUMMARY ────────────────────
+
+export const generateWeeklyInsight = async (reports, tasks) => {
+  const completedTasks = tasks.filter(t => t.status === 'completed')
+  if (completedTasks.length < 3) {
+    return null 
+  }
+
+  const issueCounts = reports.reduce((acc, r) => {
+    acc[r.issueType] = (acc[r.issueType] || 0) + 1
+    return acc
+  }, {})
+
+  const urgencyCounts = reports.reduce((acc, r) => {
+    if (r.urgencyLevel) acc[r.urgencyLevel] = (acc[r.urgencyLevel] || 0) + 1
+    return acc
+  }, {})
+
+  const avgResponseHrs = completedTasks
+    .filter(t => t.hoursToComplete)
+    .reduce((sum, t, _, arr) => sum + t.hoursToComplete / arr.length, 0)
+    .toFixed(1)
+
+  const totalAffected = reports.reduce((sum, r) => sum + (r.affectedCount || 0), 0)
+
+  const locationCounts = reports.reduce((acc, r) => {
+    const loc = r.location?.split(',')[0] || 'Unknown'
+    acc[loc] = (acc[loc] || 0) + 1
+    return acc
+  }, {})
+  const topLocations = Object.entries(locationCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([loc, count]) => `${loc} (${count} reports)`)
+    .join(', ')
+
+  const prompt = `You are a strategic advisor for an NGO. Analyze this week's field data and generate a concise insight report.
+
+This week's data:
+- Total reports: ${reports.length}
+- Total people affected: ${totalAffected}
+- Issue breakdown: ${JSON.stringify(issueCounts)}
+- Urgency breakdown: ${JSON.stringify(urgencyCounts)}
+- Tasks completed: ${completedTasks.length}
+- Average response time: ${avgResponseHrs} hours
+- Most affected areas: ${topLocations}
+
+Return ONLY this JSON:
+{
+  "headline": "<one powerful sentence summarizing the week>",
+  "topCrisisType": "<the most common or severe issue type>",
+  "hotspotArea": "<most reported location>",
+  "responseEfficiency": "<brief assessment of response time performance>",
+  "keyInsight": "<one non-obvious insight from the data>",
+  "recommendation": "<one specific, actionable recommendation for next week>"
+}`
+
+  const parsed = await callGemini(prompt)
+  if (!parsed) return null
+
+  return {
+    headline:            parsed.headline || 'Weekly summary generated.',
+    topCrisisType:       parsed.topCrisisType || 'Mixed',
+    hotspotArea:         parsed.hotspotArea || 'Various',
+    responseEfficiency:  parsed.responseEfficiency || 'Data insufficient',
+    keyInsight:          parsed.keyInsight || 'Continue monitoring trends.',
+    recommendation:      parsed.recommendation || 'Maintain current volunteer allocation.',
+    generatedAt:         new Date().toISOString(),
+    dataPoints: {
+      totalReports: reports.length,
+      totalAffected,
+      completedTasks: completedTasks.length,
+      avgResponseHrs: Number(avgResponseHrs) || 0
+    }
+  }
 }

@@ -16,5 +16,15 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read, write: if true;
     }
+
+    // 🧩 CLUSTERS
+    match /clusters/{clusterId} {
+      allow read, write: if true;
+    }
+
+    // 📊 INSIGHTS
+    match /insights/{insightId} {
+      allow read, write: if true;
+    }
   }
 }

@@ -17,7 +17,8 @@ export default function TaskCard({ task, onUpdateStatus }) {
     reportLocation = 'Location not provided', 
     urgencyLevel = 'low', 
     status = 'assigned',
-    reportId = null
+    reportId = null,
+    taskBrief = null
   } = task || {};
 
   // Cleanup object URLs for preview to prevent memory leaks
@@ -82,13 +83,13 @@ export default function TaskCard({ task, onUpdateStatus }) {
   const getStatusConfig = () => {
     switch (status) {
       case 'assigned': 
-        return { label: 'Accept Task', btnColor: 'var(--accent-primary)', btnText: 'white', badgeBg: 'rgba(129, 140, 248, 0.2)', badgeColor: '#818cf8' };
+        return { label: 'Accept Task', btnColor: 'var(--accent-primary)', btnText: 'white', badgeBg: 'var(--medium-bg)', badgeColor: 'var(--medium)' };
       case 'accepted': 
-        return { label: 'Start Task', btnColor: '#f59e0b', btnText: 'white', badgeBg: 'rgba(245, 158, 11, 0.2)', badgeColor: '#fbbf24' };
+        return { label: 'Start Task', btnColor: 'var(--high)', btnText: 'white', badgeBg: 'var(--high-bg)', badgeColor: 'var(--high)' };
       case 'in_progress': 
-        return { label: 'Complete Task', btnColor: '#3b82f6', btnText: 'white', badgeBg: 'rgba(59, 130, 246, 0.2)', badgeColor: '#60a5fa' };
+        return { label: 'Complete Task', btnColor: 'var(--accent-primary)', btnText: 'white', badgeBg: 'var(--medium-bg)', badgeColor: 'var(--medium)' };
       case 'completed': 
-        return { label: 'Completed', btnColor: 'transparent', btnText: 'var(--text-dim)', badgeBg: 'rgba(16, 185, 129, 0.2)', badgeColor: '#34d399' };
+        return { label: 'Completed', btnColor: 'transparent', btnText: 'var(--text-dim)', badgeBg: 'var(--low-bg)', badgeColor: 'var(--low)' };
       default: 
         return { label: 'Unknown', btnColor: 'var(--border)', btnText: 'white', badgeBg: 'var(--border)', badgeColor: 'var(--text-dim)' };
     }
@@ -98,10 +99,10 @@ export default function TaskCard({ task, onUpdateStatus }) {
   
   const getUrgencyColor = () => {
     const level = urgencyLevel?.toLowerCase();
-    if (level === 'critical') return { bg: 'rgba(220, 38, 38, 0.2)', text: '#f87171' };
-    if (level === 'high') return { bg: 'rgba(234, 88, 12, 0.2)', text: '#fb923c' };
-    if (level === 'medium') return { bg: 'rgba(202, 138, 4, 0.2)', text: '#facc15' };
-    return { bg: 'rgba(22, 163, 74, 0.2)', text: '#4ade80' };
+    return { 
+      bg: `var(--${level}-bg, var(--bg-dark))`, 
+      text: `var(--${level}, var(--text-main))` 
+    };
   };
 
   const urgencyConfig = getUrgencyColor();
@@ -152,6 +153,15 @@ export default function TaskCard({ task, onUpdateStatus }) {
           {id}
         </span>
       </div>
+
+      {taskBrief && status !== 'assigned' && (
+        <div style={{ marginBottom: '1.5rem', background: 'rgba(129, 140, 248, 0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-primary)' }}>
+          <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--accent-primary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📋 Your Mission Brief</h4>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
+            {taskBrief}
+          </p>
+        </div>
+      )}
 
       {isCompleting && status === 'in_progress' ? (
         <div style={{ 

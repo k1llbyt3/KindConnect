@@ -1,73 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '100vh',
-  backgroundColor: '#f3f4f6',
-  fontFamily: 'sans-serif',
-  padding: '2rem'
-};
-
-const headerStyle = {
-  textAlign: 'center',
-  marginBottom: '3rem'
-};
-
-const titleStyle = {
-  fontSize: '2.5rem',
-  color: '#111827',
-  marginBottom: '0.5rem',
-  fontWeight: 'bold'
-};
-
-const subtitleStyle = {
-  fontSize: '1.125rem',
-  color: '#6b7280'
-};
-
-const gridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-  gap: '1.5rem',
-  width: '100%',
-  maxWidth: '1000px'
-};
-
-const cardStyle = {
-  backgroundColor: 'white',
-  padding: '2rem',
-  borderRadius: '12px',
-  boxShadow: '0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)',
-  cursor: 'pointer',
-  transition: 'transform 0.2s, box-shadow 0.2s',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  textAlign: 'center',
-  border: '1px solid #e5e7eb'
-};
-
-const iconStyle = {
-  fontSize: '3rem',
-  marginBottom: '1rem'
-};
-
-const cardTitleStyle = {
-  fontSize: '1.25rem',
-  fontWeight: '600',
-  color: '#111827',
-  marginBottom: '0.5rem'
-};
-
-const cardDescStyle = {
-  color: '#4b5563',
-  lineHeight: '1.5'
-};
-
 export default function RoleSelector({ setRole }) {
   const navigate = useNavigate();
 
@@ -77,79 +10,77 @@ export default function RoleSelector({ setRole }) {
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>Smart Resource Allocation Platform</h1>
-        <p style={subtitleStyle}>Select your role to continue</p>
-      </div>
-
-      <div style={gridStyle}>
-        <div 
-          style={cardStyle}
-          onClick={() => handleSelectRole('field_worker', '/submit')}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
-          }}
-        >
-          <div style={iconStyle}>📋</div>
-          <h2 style={cardTitleStyle}>Field Worker</h2>
-          <p style={cardDescStyle}>Submit community issue reports from the field</p>
+    <div className="home-wrapper">
+      <div className="page-container" style={{ textAlign: 'center', maxWidth: '1000px', padding: '1rem' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 className="gradient-text" style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>Smart Resource Allocation</h1>
+          <p style={{ color: 'var(--text-dim)', fontSize: '1rem' }}>Select your role to continue</p>
         </div>
 
-        <div 
-          style={cardStyle}
-          onClick={() => handleSelectRole('admin', '/dashboard')}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
-          }}
-        >
-          <div style={iconStyle}>📊</div>
-          <h2 style={cardTitleStyle}>Admin / NGO Manager</h2>
-          <p style={cardDescStyle}>View dashboard, assign volunteers, track tasks</p>
-        </div>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '1.5rem' 
+        }}>
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole('field_worker', '/submit')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📋</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Field Worker</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>Submit community issue reports from the field</p>
+          </div>
 
-        <div 
-          style={cardStyle}
-          onClick={() => handleSelectRole('volunteer', '/register')}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
-          }}
-        >
-          <div style={iconStyle}>🙋</div>
-          <h2 style={cardTitleStyle}>Volunteer</h2>
-          <p style={cardDescStyle}>See your assigned tasks and update progress</p>
-        </div>
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole('admin', '/dashboard')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📊</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Admin / Manager</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>View dashboard, assign volunteers, track tasks</p>
+          </div>
 
-        <div 
-          style={cardStyle}
-          onClick={() => handleSelectRole(null, '/verify-task')}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
-          }}
-        >
-          <div style={iconStyle}>✅</div>
-          <h2 style={cardTitleStyle}>Verify Task</h2>
-          <p style={cardDescStyle}>Independently submit proof for a completed task</p>
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole('volunteer', '/register')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🙋</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Volunteer</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>See your assigned tasks and update progress</p>
+          </div>
+
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole(null, '/verify-task')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✅</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Verify Task</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>Independently submit proof for a completed task</p>
+          </div>
+
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole('public', '/impact-feed')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🌍</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Live Impact Feed</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>View real-time crisis resolutions and community impact</p>
+          </div>
+
+          <div 
+            className="card"
+            style={{ padding: '1.5rem 1.2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            onClick={() => handleSelectRole('partner', '/partner')}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤝</div>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Partner NGO</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', margin: 0 }}>Coordinate resources and collaborate on large-scale clusters</p>
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTasksForVolunteer, updateTask, updateReport } from '../firebase';
+import { getTasksForVolunteer, updateTask, updateReport, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { generateTaskBrief, generateImpactStatement } from '../gemini';
 import TaskCard from '../components/TaskCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -31,7 +33,35 @@ export default function MyTasks() {
 
   const handleUpdateStatus = async (taskId, newStatus, reportId, extraFields = {}) => {
     try {
-      await updateTask(taskId, { status: newStatus, ...extraFields });
+      let finalFields = { status: newStatus, ...extraFields };
+      const task = tasks.find(t => t.id === taskId);
+      
+      if (newStatus === 'accepted' && task) {
+        // USP 4: Smart Volunteer Task Brief
+        const volunteerId = localStorage.getItem('volunteerId');
+        if (volunteerId && !task.taskBrief) {
+          const volSnap = await getDoc(doc(db, 'volunteers', volunteerId));
+          if (volSnap.exists()) {
+            const volData = volSnap.data();
+            const brief = await generateTaskBrief(task, volData);
+            if (brief) finalFields.taskBrief = brief;
+          }
+        }
+      } else if (newStatus === 'completed' && task) {
+        // USP 1: Auto Impact Statement Generator
+        if (!task.impactStatement) {
+          const createdMillis = task.createdAt?.toMillis?.() || new Date(task.createdAt).getTime() || Date.now();
+          const hours = ((Date.now() - createdMillis) / (1000 * 60 * 60)).toFixed(1);
+          finalFields.hoursToComplete = Number(hours);
+          finalFields.completedAt = new Date();
+          
+          const tempTask = { ...task, ...finalFields, completionNote: extraFields.completionNote || 'Task completed successfully' };
+          const impact = await generateImpactStatement(tempTask);
+          if (impact) finalFields.impactStatement = impact;
+        }
+      }
+      
+      await updateTask(taskId, finalFields);
       
       if (newStatus === 'completed' && reportId) {
         await updateReport(reportId, { status: 'completed' });

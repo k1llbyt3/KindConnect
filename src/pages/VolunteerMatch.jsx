@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { db, updateReport, getVolunteers, addTask } from '../firebase'
+import { db, updateReport, getVolunteers, getTasks, updateVolunteer, addTask } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { matchVolunteers, simpleMatch } from '../gemini'
+import { matchVolunteers, simpleMatch, checkVolunteerWellbeing } from '../gemini'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function VolunteerMatch() {
@@ -32,6 +32,7 @@ export default function VolunteerMatch() {
 
         // Get all volunteers
         const allVolunteers = await getVolunteers()
+        const allTasks = await getTasks()
         
         if (allVolunteers.length === 0) {
           setError("No volunteers registered yet.")
@@ -44,6 +45,27 @@ export default function VolunteerMatch() {
         if (!matched || matched.length === 0) {
           console.warn("AI Match failed or returned empty. Using simple fallback.")
           matched = simpleMatch(reportData, allVolunteers)
+        }
+
+        // USP 3: Volunteer Burnout & Fatigue Check
+        for (const m of matched) {
+          const vol = allVolunteers.find(v => v.id === String(m.volunteerId))
+          if (vol) {
+            const recentTasks = allTasks
+              .filter(t => String(t.volunteerId) === String(m.volunteerId) && t.status === 'completed')
+              .sort((a, b) => {
+                const atA = a.completedAt?.toMillis?.() || new Date(a.completedAt).getTime() || 0;
+                const atB = b.completedAt?.toMillis?.() || new Date(b.completedAt).getTime() || 0;
+                return atB - atA;
+              });
+
+            const wellbeing = await checkVolunteerWellbeing(vol, recentTasks, updateVolunteer);
+            m.wellbeingStatus = wellbeing.wellbeingStatus;
+            m.wellbeingReason = wellbeing.reason;
+          } else {
+            m.wellbeingStatus = 'Green';
+            m.wellbeingReason = 'Volunteer profile not found for wellbeing check.';
+          }
         }
         
         setMatches(matched)
@@ -99,7 +121,7 @@ export default function VolunteerMatch() {
             Successfully assigned to <strong style={{ color: 'var(--text-main)' }}>{assignedTask.volunteerName}</strong>.
           </p>
 
-          <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ background: 'var(--bg-dark)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
             <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', margin: '0 0 0.75rem 0', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '600' }}>🔑 Task ID (Share with Volunteer)</p>
             <p style={{
               fontFamily: 'monospace',
@@ -108,7 +130,7 @@ export default function VolunteerMatch() {
               wordBreak: 'break-all',
               margin: 0,
               userSelect: 'all',
-              background: 'rgba(129, 140, 248, 0.1)',
+              background: 'rgba(99, 102, 241, 0.05)',
               padding: '0.75rem',
               borderRadius: '8px',
               cursor: 'text'
@@ -148,7 +170,7 @@ export default function VolunteerMatch() {
   )
 
   return (
-    <div className="volunteer-match page-container" style={{ maxWidth: '800px' }}>
+    <div className="volunteer-match page-container" style={{ maxWidth: '900px', marginTop: '2rem' }}>
       <Link to={`/report/${id}`} style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
         <span>&larr;</span> Back to Report
       </Link>
@@ -170,7 +192,7 @@ export default function VolunteerMatch() {
             <div key={m.volunteerId} className="card match-card" style={matchCardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                     <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
                       {m.volunteerName}
                     </h3>
@@ -185,10 +207,26 @@ export default function VolunteerMatch() {
                     }}>
                       {m.matchScore}% Match
                     </span>
+                    {m.wellbeingStatus && (
+                      <span className="status-tag" style={{
+                        background: m.wellbeingStatus === 'Red' ? 'var(--critical-bg)' : m.wellbeingStatus === 'Yellow' ? 'var(--high-bg)' : 'var(--low-bg)',
+                        color: m.wellbeingStatus === 'Red' ? 'var(--critical)' : m.wellbeingStatus === 'Yellow' ? 'var(--high)' : 'var(--low)',
+                        border: `1px solid ${m.wellbeingStatus === 'Red' ? 'var(--critical)' : m.wellbeingStatus === 'Yellow' ? 'var(--high)' : 'var(--low)'}20`
+                      }}>
+                        {m.wellbeingStatus === 'Red' ? '🔴 Overworked' : m.wellbeingStatus === 'Yellow' ? '🟡 Heavy Load' : '🟢 Available'}
+                      </span>
+                    )}
                   </div>
                   <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-dim)', fontSize: '0.85rem', fontStyle: 'italic', display: 'flex', gap: '0.4rem' }}>
                     <span style={{ fontSize: '1rem' }}>✨</span> {m.matchReason}
                   </p>
+                  {m.wellbeingStatus && m.wellbeingStatus !== 'Green' && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: m.wellbeingStatus === 'Red' ? 'var(--critical-bg)' : 'var(--high-bg)', borderRadius: '8px', borderLeft: `4px solid ${m.wellbeingStatus === 'Red' ? 'var(--critical)' : 'var(--high)'}` }}>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: m.wellbeingStatus === 'Red' ? 'var(--critical)' : 'var(--high)', fontWeight: '500' }}>
+                        <strong>Warning:</strong> {m.wellbeingReason}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -216,8 +254,8 @@ const matchCardStyle = {
 }
 
 const btnStyle = {
-  background: 'rgba(255, 255, 255, 0.1)',
-  color: 'white',
+  background: 'var(--bg-dark)',
+  color: 'var(--text-main)',
   border: '1px solid var(--border)',
   padding: '0.6rem 1.2rem',
   borderRadius: '8px',

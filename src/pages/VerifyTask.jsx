@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function VerifyTask() {
+  const navigate = useNavigate();
   const [taskId, setTaskId] = useState('');
   const [completionNote, setCompletionNote] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
@@ -105,17 +106,25 @@ export default function VerifyTask() {
   }
 
   return (
-    <div className="page-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h2 className="gradient-text" style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0' }}>Verify Task</h2>
-        <p style={{ color: 'var(--text-dim)', margin: 0 }}>Provide a Task ID and proof photo to mark it as completed.</p>
+    <div className="page-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem', position: 'relative', minHeight: '60px' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{ position: 'absolute', left: '0', background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '8px', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
+        >
+          <span>&larr;</span> Back
+        </button>
+        <div style={{ width: '100%', textAlign: 'center' }}>
+          <h2 className="gradient-text" style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>Verify Task</h2>
+          <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '0.95rem' }}>Provide a Task ID and proof photo to mark it as completed.</p>
+        </div>
       </div>
 
       <div className="card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
           
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Task ID *</label>
+          <div style={{ gridColumn: '1 / 2' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>Task ID *</label>
             <input 
               type="text" 
               value={taskId} 
@@ -129,23 +138,8 @@ export default function VerifyTask() {
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Completion Note (Optional)</label>
-            <textarea 
-              value={completionNote} 
-              onChange={(e) => setCompletionNote(e.target.value)} 
-              disabled={loading}
-              style={{
-                width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border)',
-                background: 'var(--bg-dark)', color: 'var(--text-main)', fontSize: '1rem', minHeight: '100px',
-                resize: 'vertical', boxSizing: 'border-box'
-              }} 
-              placeholder="Add any extra details..." 
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)' }}>Proof Photo *</label>
+          <div style={{ gridColumn: '2 / 3' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>Proof Photo *</label>
             <input 
               type="file" 
               accept="image/*" 
@@ -157,19 +151,35 @@ export default function VerifyTask() {
               }} 
             />
             {photoPreview && (
-              <div style={{ marginTop: '0.75rem', borderRadius: '8px', overflow: 'hidden', height: '160px', border: '1px solid var(--border)' }}>
+              <div style={{ marginTop: '0.75rem', borderRadius: '8px', overflow: 'hidden', height: '120px', border: '1px solid var(--border)' }}>
                 <img src={photoPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             )}
           </div>
 
-          {error && <div style={{ color: '#f87171', fontSize: '0.9rem', background: 'rgba(248, 113, 113, 0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(248, 113, 113, 0.2)' }}>{error}</div>}
+          <div style={{ gridColumn: '1 / 3' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>Completion Note (Optional)</label>
+            <textarea 
+              value={completionNote} 
+              onChange={(e) => setCompletionNote(e.target.value)} 
+              disabled={loading}
+              style={{
+                width: '100%', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border)',
+                background: 'var(--bg-dark)', color: 'var(--text-main)', fontSize: '1rem', minHeight: '80px',
+                resize: 'vertical', boxSizing: 'border-box'
+              }} 
+              placeholder="Add any extra details..." 
+            />
+          </div>
+
+          {error && <div style={{ gridColumn: '1 / 3', color: '#f87171', fontSize: '0.9rem', background: 'rgba(248, 113, 113, 0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(248, 113, 113, 0.2)' }}>{error}</div>}
 
           <button type="submit" disabled={loading} style={{
+            gridColumn: '1 / 3',
             background: loading ? 'var(--bg-dark)' : 'var(--accent-gradient)',
             color: loading ? 'var(--text-dim)' : 'white', 
             border: loading ? '1px solid var(--border)' : 'none', 
-            padding: '1rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', 
+            padding: '0.85rem', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', 
             cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', 
             alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', transition: 'all 0.2s ease'
           }}>

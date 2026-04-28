@@ -1,24 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --bg-dark: #07090e;
-  --bg-gradient: radial-gradient(circle at 50% 0%, #1a1f35 0%, #07090e 60%);
-  --card-bg: rgba(20, 24, 39, 0.6);
-  --card-hover: rgba(30, 36, 56, 0.8);
-  --accent-primary: #818cf8;
-  --accent-secondary: #c084fc;
-  --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  --text-main: #f8fafc;
-  --text-dim: #94a3b8;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.2);
-  --critical: #ff4d4f;
-  --high: #faad14;
-  --medium: #40a9ff;
-  --low: #52c41a;
+  --bg-dark: #f3f4f6; /* Neutral Light Gray */
+  --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
+                 radial-gradient(at 50% 0%, hsla(225,39%,30%,0.05) 0, transparent 50%), 
+                 radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-hover: rgba(255, 255, 255, 1);
+  --accent-primary: #6366f1; /* Indigo 500 */
+  --accent-secondary: #d946ef; /* Fuchsia 500 */
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #d946ef 100%);
+  --text-main: #0f172a; /* Slate 900 */
+  --text-dim: #334155; /* Slate 700 - higher contrast */
+  --border: rgba(99, 102, 241, 0.1);
+  --border-hover: rgba(99, 102, 241, 0.3);
+  --critical: #e11d48;
+  --critical-bg: #fff1f2;
+  --high: #d97706;
+  --high-bg: #fffbeb;
+  --medium: #0284c7;
+  --medium-bg: #f0f9ff;
+  --low: #16a34a;
+  --low-bg: #f0fdf4;
   
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
+  --shadow-sm: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
 }
 
 body {
@@ -50,12 +56,18 @@ h1, h2, h3, h4, h5, h6 {
 /* Glassmorphism Cards */
 .card, .admin-dashboard, .home, .report-detail, .volunteer-match {
   background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  transform: translateY(-2px);
 }
 
 /* Buttons */
@@ -104,7 +116,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(99, 102, 241, 0.03);
 }
 
 /* Custom Scrollbar */
@@ -116,11 +128,11 @@ tbody tr:hover {
   background: var(--bg-dark); 
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1); 
+  background: rgba(0, 0, 0, 0.2); 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2); 
+  background: rgba(0, 0, 0, 0.3); 
 }
 
 /* Select inputs */
@@ -152,12 +164,13 @@ select:hover, select:focus {
 /* Status Tags */
 .status-tag {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 1rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* Layout Utilities */

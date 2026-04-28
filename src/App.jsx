@@ -9,10 +9,14 @@ import VolunteerMatch from "./pages/VolunteerMatch";
 import RegisterVolunteer from "./pages/RegisterVolunteer";
 import MyTasks from "./pages/MyTasks";
 import VerifyTask from "./pages/VerifyTask";
+import LiveImpactFeed from "./pages/LiveImpactFeed";
+import PartnerNGO from "./pages/PartnerNGO";
+import Navbar from "./components/Navbar";
 
 function App() {
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
         <Route path="/" element={<RoleSelector />} />
         <Route path="/submit" element={<SubmitReport />} />
@@ -22,6 +26,8 @@ function App() {
         <Route path="/register" element={<RegisterVolunteer />} />
         <Route path="/tasks" element={<MyTasks />} />
         <Route path="/verify-task" element={<VerifyTask />} />
+        <Route path="/impact-feed" element={<LiveImpactFeed />} />
+        <Route path="/partner" element={<PartnerNGO />} />
       </Routes>
     </BrowserRouter>
   );

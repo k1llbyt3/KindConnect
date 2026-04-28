@@ -76,6 +76,10 @@ export const getVolunteers = async () => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
+export const updateVolunteer = async (id, fields) => {
+  await updateDoc(doc(db, 'volunteers', id), fields)
+}
+
 // ─── TASKS ──────────────────────────────────────────────────
 
 export const addTask = async (data) => {
@@ -95,6 +99,24 @@ export const updateTask = async (id, fields) => {
 
 export const getTasksForVolunteer = (volunteerId, callback) => {
   const q = query(collection(db, 'tasks'), where('volunteerId', '==', volunteerId))
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export const getTasks = async () => {
+  const snap = await getDocs(collection(db, 'tasks'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
+export const subscribeToTasks = (callback) => {
+  return onSnapshot(collection(db, 'tasks'), (snap) => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export const subscribeToInsights = (callback) => {
+  const q = query(collection(db, 'insights'), orderBy('generatedAt', 'desc'))
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
   })

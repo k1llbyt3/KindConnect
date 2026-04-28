@@ -47,7 +47,7 @@ export default function ReportDetail() {
   )
 
   return (
-    <div className="report-detail page-container" style={{ maxWidth: '800px' }}>
+    <div className="report-detail page-container" style={{ maxWidth: '900px', marginTop: '2rem' }}>
       <Link to="/dashboard" style={{ color: 'var(--text-dim)', textDecoration: 'none', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'color 0.2s', fontSize: '0.9rem' }}>
         <span>&larr;</span> Back to Dashboard
       </Link>
@@ -59,11 +59,11 @@ export default function ReportDetail() {
             <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>ID: {report.id}</div>
           </div>
           <span className="status-tag" style={{ 
-            background: `var(--${report.urgencyLevel?.toLowerCase() || 'text-dim'})`,
-            boxShadow: `0 0 15px var(--${report.urgencyLevel?.toLowerCase() || 'text-dim'})40`,
-            color: 'white'
+            background: `var(--${report.urgencyLevel?.toLowerCase()}-bg, var(--bg-dark))`,
+            color: `var(--${report.urgencyLevel?.toLowerCase()}, var(--text-dim))`,
+            border: `1px solid var(--${report.urgencyLevel?.toLowerCase()})20`
           }}>
-            {report.urgencyLevel || 'Scoring...'} Score: {report.urgencyScore ?? 'N/A'}
+            {report.urgencyLevel || 'Scoring...'} | Score: {report.urgencyScore ?? 'N/A'}
           </span>
         </div>
 
@@ -92,8 +92,8 @@ export default function ReportDetail() {
           </div>
         </div>
 
-        <div style={{ marginTop: '1.5rem', background: 'rgba(236, 72, 153, 0.05)', border: '1px solid #ec4899', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 0 15px rgba(236, 72, 153, 0.08)' }}>
-          <h3 style={{ marginTop: 0, color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+        <div style={{ marginTop: '1.5rem', background: 'rgba(217, 70, 239, 0.05)', border: '1px solid var(--accent-secondary)', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 0 15px rgba(217, 70, 239, 0.08)' }}>
+          <h3 style={{ marginTop: 0, color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
             <span style={{ fontSize: '1.25rem' }}>🔮</span> Future Impact Prediction
           </h3>
           <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
@@ -131,7 +131,7 @@ export default function ReportDetail() {
         {(report.status === 'assigned' || report.status === 'resolved') && (
           <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(82, 196, 26, 0.1)', border: '1px solid var(--low)', borderRadius: '12px', textAlign: 'center' }}>
             <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--low)', fontSize: '1.5rem' }}>✅ Task Assigned</h3>
-            <p style={{ margin: 0, fontSize: '1.1rem' }}>This report is currently being handled by <strong style={{ color: 'white' }}>{report.assignedVolunteerName || 'a volunteer'}</strong>.</p>
+            <p style={{ margin: 0, fontSize: '1.1rem' }}>This report is currently being handled by <strong style={{ color: 'var(--text-main)' }}>{report.assignedVolunteerName || 'a volunteer'}</strong>.</p>
           </div>
         )}
       </div>

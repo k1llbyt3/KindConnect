@@ -53,17 +53,24 @@ export default function RegisterVolunteer() {
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div className="page-container" style={{ maxWidth: '900px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', position: 'relative', minHeight: '60px' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{ position: 'absolute', left: '0', background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '8px', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
+        >
+          <span>&larr;</span> Back
+        </button>
+        <div style={{ width: '100%', textAlign: 'center' }}>
+          <h2 className="gradient-text" style={{ fontSize: '2rem', margin: '0 0 0.5rem 0' }}>Join the Force</h2>
+          <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '0.95rem' }}>Register as a volunteer to start helping your community in times of need.</p>
+        </div>
+      </div>
+
       <div className="card" style={{ padding: '2.5rem' }}>
-        <h2 className="gradient-text" style={{ fontSize: '2.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>
-          Join the Force
-        </h2>
-        <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginBottom: '2.5rem' }}>
-          Register as a volunteer to start helping your community in times of need.
-        </p>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+          <div style={{ gridColumn: '1 / 2' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)', fontWeight: '500' }}>
               Full Name
             </label>
@@ -75,7 +82,7 @@ export default function RegisterVolunteer() {
               onChange={handleChange}
               style={{ 
                 width: '100%', padding: '0.875rem', borderRadius: '8px', 
-                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', 
+                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.05)', 
                 color: 'var(--text-main)', fontSize: '1rem', boxSizing: 'border-box',
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
               }}
@@ -83,7 +90,7 @@ export default function RegisterVolunteer() {
             />
           </div>
 
-          <div>
+          <div style={{ gridColumn: '2 / 3' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)', fontWeight: '500' }}>
               Location
             </label>
@@ -95,7 +102,7 @@ export default function RegisterVolunteer() {
               onChange={handleChange}
               style={{ 
                 width: '100%', padding: '0.875rem', borderRadius: '8px', 
-                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', 
+                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.05)', 
                 color: 'var(--text-main)', fontSize: '1rem', boxSizing: 'border-box',
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
               }}
@@ -103,7 +110,7 @@ export default function RegisterVolunteer() {
             />
           </div>
 
-          <div>
+          <div style={{ gridColumn: '1 / 3' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-main)', fontWeight: '500' }}>
               Skills (comma separated)
             </label>
@@ -115,7 +122,7 @@ export default function RegisterVolunteer() {
               onChange={handleChange}
               style={{ 
                 width: '100%', padding: '0.875rem', borderRadius: '8px', 
-                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', 
+                border: '1px solid var(--border)', background: 'rgba(0,0,0,0.05)', 
                 color: 'var(--text-main)', fontSize: '1rem', boxSizing: 'border-box',
                 transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
               }}
@@ -123,7 +130,7 @@ export default function RegisterVolunteer() {
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <div style={{ gridColumn: '1 / 3', display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
             <input 
               type="checkbox"
               name="available"
@@ -143,16 +150,17 @@ export default function RegisterVolunteer() {
             type="submit"
             disabled={loading}
             style={{
+              gridColumn: '1 / 3',
               background: 'var(--accent-gradient)',
               color: 'white',
               border: 'none',
               padding: '1rem',
               borderRadius: '8px',
-              fontSize: '1.1rem',
+              fontSize: '1rem',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
-              marginTop: '1.5rem',
+              marginTop: '0.5rem',
               boxShadow: '0 4px 14px 0 rgba(129, 140, 248, 0.39)',
               transition: 'all 0.3s ease'
             }}
