@@ -40,7 +40,7 @@ Make sure you have [Node.js](https://nodejs.org/) (v18 or higher recommended) an
 ### 1. Clone the repository 
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ADHARV-S-RAVI/Kind_Connect.git
 cd KindConnect
 ```
 
