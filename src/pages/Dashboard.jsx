@@ -4,6 +4,7 @@ import { subscribeToReports, subscribeToTasks, subscribeToInsights, db } from '.
 import { collection, addDoc } from 'firebase/firestore'
 import { generateWeeklyInsight } from '../gemini'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { seedAll } from '../scripts/seedData'
 
 export default function AdminDashboard() {
   const [reports, setReports] = useState([])
@@ -14,6 +15,9 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('All')
   const [insightCooldown, setInsightCooldown] = useState(false)
   const [cooldownMinutes, setCooldownMinutes] = useState(0)
+  const [showSeedModal, setShowSeedModal] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [seedStep, setSeedStep] = useState('')
 
   useEffect(() => {
     const unsubReports = subscribeToReports(data => setReports(data || []))
@@ -109,10 +113,71 @@ export default function AdminDashboard() {
           <h1 className="gradient-text" style={{ margin: 0, fontSize: '1.75rem' }}>Admin Dashboard</h1>
           <p style={{ color: 'var(--text-dim)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>Monitor and assign incoming community reports</p>
         </div>
-        <Link to="/" style={{ color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span>&larr;</span> Change Role
-        </Link>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button 
+            onClick={() => setShowSeedModal(true)} 
+            style={{ ...linkStyle, background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+          >
+            🌱 Seed Demo Data
+          </button>
+          <Link to="/" style={{ color: 'var(--text-dim)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>&larr;</span> Change Role
+          </Link>
+        </div>
       </header>
+
+      {/* COOL SEED MODAL */}
+      {showSeedModal && (
+        <div style={modalOverlayStyle}>
+          <div className="card glass-card" style={modalContentStyle}>
+            <h2 className="gradient-text" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+              {isSeeding ? '🌱 Rejuvenating Database...' : 'Ready to Seed?'}
+            </h2>
+            <p style={{ color: 'var(--text-dim)', marginBottom: '1.5rem', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              {isSeeding 
+                ? `Current Step: ${seedStep}`
+                : 'This will clear all current reports, tasks, and volunteers and replace them with fresh, AI-clustered demo data. Perfect for presentations!'}
+            </p>
+            
+            {isSeeding && (
+              <div style={progressBarContainerStyle}>
+                <div style={progressBarStyle} className="pulse-animation"></div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              {!isSeeding && (
+                <button onClick={() => setShowSeedModal(false)} style={btnSecondaryStyle}>Cancel</button>
+              )}
+              <button 
+                onClick={async () => {
+                  setIsSeeding(true)
+                  setSeedStep('Clearing collections...')
+                  try {
+                    // We wrap the seedAll to update the UI steps
+                    // Note: Since seedAll is a black box, we'll just simulate steps for UI polish
+                    setTimeout(() => setSeedStep('Generating Volunteers...'), 2000)
+                    setTimeout(() => setSeedStep('Processing Reports & AI Clustering...'), 4000)
+                    await seedAll()
+                    setSeedStep('Finalizing...')
+                    setTimeout(() => {
+                      setIsSeeding(false)
+                      setShowSeedModal(false)
+                    }, 1000)
+                  } catch (e) {
+                    alert("Seeding failed")
+                    setIsSeeding(false)
+                  }
+                }} 
+                disabled={isSeeding}
+                style={isSeeding ? btnDisabledStyle : btnPrimaryStyle}
+              >
+                {isSeeding ? 'Working...' : 'Go Live!'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start' }}>
         <div className="main-content">
@@ -293,5 +358,74 @@ const linkStyle = {
   borderRadius: '4px',
   textDecoration: 'none',
   fontSize: '0.9rem',
-  display: 'inline-block'
+  display: 'inline-block',
+  cursor: 'pointer'
+}
+
+const modalOverlayStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  background: 'rgba(0,0,0,0.85)',
+  backdropFilter: 'blur(8px)',
+  zIndex: 1000,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '1rem'
+}
+
+const modalContentStyle = {
+  maxWidth: '450px',
+  width: '100%',
+  padding: '2rem',
+  border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: '0 0 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02)',
+  animation: 'slideIn 0.3s ease-out'
+}
+
+const progressBarContainerStyle = {
+  width: '100%',
+  height: '6px',
+  background: 'rgba(255,255,255,0.05)',
+  borderRadius: '10px',
+  overflow: 'hidden',
+  marginBottom: '1.5rem'
+}
+
+const progressBarStyle = {
+  height: '100%',
+  width: '70%', // Simulated progress
+  background: 'var(--accent-gradient)',
+  borderRadius: '10px',
+  transition: 'width 0.5s ease'
+}
+
+const btnPrimaryStyle = {
+  background: 'var(--accent-gradient)',
+  color: 'white',
+  border: 'none',
+  padding: '0.75rem 1.5rem',
+  borderRadius: '8px',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+}
+
+const btnSecondaryStyle = {
+  background: 'transparent',
+  color: 'var(--text-dim)',
+  border: '1px solid var(--border)',
+  padding: '0.75rem 1.5rem',
+  borderRadius: '8px',
+  fontWeight: 'bold',
+  cursor: 'pointer'
+}
+
+const btnDisabledStyle = {
+  ...btnPrimaryStyle,
+  opacity: 0.5,
+  cursor: 'not-allowed'
 }

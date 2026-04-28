@@ -1,7 +1,7 @@
-import { addVolunteer, addReport, updateReport, db } from '../firebase'
-import { scoreUrgency } from '../gemini'
+import { addVolunteer, addReport, updateReport, getReports, db } from '../firebase'
+import { scoreUrgency, detectReportCluster, predictResourceNeeds } from '../gemini'
 import { fallbackUrgencyScore, scoreToLevel } from '../utils/fallbackScore'
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore'
 
 const clearCollection = async (collectionName) => {
   const snapshot = await getDocs(collection(db, collectionName))
@@ -107,8 +107,57 @@ export const seedAll = async () => {
     }
     
     console.log(`  ✓ Score obtained: ${aiResult.urgencyLevel}. Updating Firestore...`)
-    await updateReport(reportId, { ...aiResult, aiStatus: 'done' })
-    console.log(`  ✓ Report updated!`)
+    let finalUpdate = { ...aiResult, aiStatus: 'done' }
+
+    // USP 2: Real-time Clustering during Seeding
+    try {
+      const allReports = await getReports()
+      const recentOpen = allReports.filter(r => r.status === 'open' && r.id !== reportId)
+      const reportWithId = { id: reportId, ...r, ...finalUpdate }
+      
+      const clusterRes = await detectReportCluster(reportWithId, recentOpen)
+      
+      if (clusterRes && clusterRes.matchedReportIds?.length > 0) {
+        console.log(`  🔥 Cluster Detected! Merging with ${clusterRes.matchedReportIds.length} reports...`)
+        
+        const resourceNeeds = await predictResourceNeeds(
+          r.issueType, 
+          clusterRes.combinedAffectedCount, 
+          r.location
+        ).catch(() => [])
+
+        const clusterPayload = {
+          createdAt: serverTimestamp(),
+          reportIds: [reportId, ...clusterRes.matchedReportIds],
+          combinedAffectedCount: clusterRes.combinedAffectedCount,
+          issueType: r.issueType,
+          location: r.location,
+          urgencyLevel: aiResult.urgencyLevel,
+          clusterReason: clusterRes.clusterReason,
+          predictedResources: resourceNeeds,
+          status: 'open'
+        }
+
+        const clusterRef = await addDoc(collection(db, 'clusters'), clusterPayload)
+        const clusterId = clusterRef.id
+
+        finalUpdate.clusterId = clusterId
+        finalUpdate.isClusterPrimary = true
+        finalUpdate.combinedAffectedCount = clusterRes.combinedAffectedCount
+
+        for (const matchedId of clusterRes.matchedReportIds) {
+          await updateReport(matchedId, {
+            clusterId: clusterId,
+            isClusterPrimary: false
+          })
+        }
+      }
+    } catch (clusterErr) {
+      console.warn("  ⚠ Clustering failed during seed:", clusterErr.message)
+    }
+
+    await updateReport(reportId, finalUpdate)
+    console.log(`  ✓ Report finalized!`)
   }
   console.log('✅ ALL SEEDING COMPLETE');
 }
